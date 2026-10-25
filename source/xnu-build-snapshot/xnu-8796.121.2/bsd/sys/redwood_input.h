@@ -27,6 +27,10 @@
 #define REDWOOD_BUTTON_VOLUME_UP 2
 #define REDWOOD_BUTTON_VOLUME_DOWN 3
 #define REDWOOD_BUTTON_HOME     4
+#define REDWOOD_SLIDER          6
+#define REDWOOD_SLIDER_DOWN     1
+#define REDWOOD_SLIDER_MIDDLE   2
+#define REDWOOD_SLIDER_UP       3
 
 struct redwood_touch {
 	uint64_t time;                  /* mach_absolute_time() when the sample was posted */
@@ -39,6 +43,7 @@ struct redwood_touch {
 /* For drivers; not from interrupt context. */
 void redwood_touch_post(uint32_t type, uint32_t finger, uint32_t x, uint32_t y);
 void redwood_input_init(void);
+void redwood_op13_slider_init(void);
 void redwood_op13_buttons_init(void); /* buttons=2: OnePlus13 */
 void redwood_s3910_init(void); /* touchscreen=2: OnePlus13 S3910 */
 void redwood_virtio_input_init(void);   /* boot-arg virtio_input=1: QEMU's virtio pointer and keyboard */

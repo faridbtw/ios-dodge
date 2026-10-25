@@ -31,3 +31,43 @@ The interactive build has no return timer. A physical restart may be needed
 to leave iOS, as USB logging is unavailable while all eight cores run XNU.
 
 See README.md for the source layout and omitted build inputs.
+
+Alert slider (validated 25 October 2026)
+--------------------------------------
+Current local payload: experimental/slider/live-original-compositor-v1/payload.bin
+Bottom rings, middle is silent, top enables Do Not Disturb.
+All three physical positions were captured in a timed RAM test; the user
+confirmed Silent Mode and Do Not Disturb in the eight-core interactive build.
+The final build keeps gl=0, live battery, eight cores and no return timer.
+The one-core diagnostic is slower and is not the interactive configuration.
+
+The matched loader powers AK09970 through a firmware RPMh ldob1 vote at
+1800mV. The native driver uses the phone's own nine-value factory calibration
+(slider_cal), a sleeping 100ms poll and two matching readings per change.
+DND service requests run off the UI queue and use the hardware client's
+assertion, which is released when leaving the top position.
+
+Local inputs remain required and are not included in Git: matching baseline
+RAM boot image and payload, SDKs, firmware and factory calibration. The
+source-only repository does not contain a bootable image or system.apfs.
+With those inputs restored, build the matching slider loader:
+
+RAM_ONLY=1 LOADER_PLATFORM=dodge LOADER_BASE=0xC4000000 USB_IDLE_SECONDS=0 EMBEDDED_USB=1 bash source/touch-runtime-v15/build.sh
+python3 tools/pack-op13-diagnostic-loader.py --loader source/touch-runtime-v15/loader.efi --output experimental/slider/sensor-probe-v5/dodge-slider-probe.img
+
+Compile the updated native kernel and both userland injection libraries,
+placing libredwood.dylib and libredwood-sb.dylib under experimental/slider/userland/.
+Save the phone's /proc/tristatekey/hall_data_calib output as a local file.
+Create and boot the interactive payload from the local validated battery build:
+
+python3 tools/make-op13-slider-payload.py --calibration LOCAL_FACTORY_CALIBRATION.txt --output experimental/slider/live-original-compositor-v1
+python3 tools/boot-op13-play.py --serial YOUR_SERIAL --payload experimental/slider/live-original-compositor-v1/payload.bin --output diagnostics/slider-next
+
+The boot helper verifies the loader/payload manifests and prepares the
+sensor before touch handoff. All boot and staging operations use RAM.
+Transport/classification checks work without a connected phone:
+python3 tools/test-op13-slider.py
+Optional hardware-profile check with your locally captured FDT:
+python3 tools/test-op13-slider.py --dtb LOCAL_ANDROID.dtb
+
+See validation/alert-slider/ for sanitized results and build identities.

@@ -3758,6 +3758,7 @@ starts_with(const char *s, const char *prefix)
 static int touch_trace_stream;
 #include "trace.inc"
 #include "sm8750_diag.inc"
+#include "op13_slider_probe.inc"
 #include "tlmm_config_diag.inc"
 #include "spi_config_diagnostics.inc"
 #include "geni_preflight_diag.inc"
@@ -3831,6 +3832,11 @@ fb_command(char *cmd)
   }else print("display-te: insufficient edges; physical refresh UNKNOWN\n");
   print("display-te: TE signal observation only; no panel/ADFR mode was changed\n");
   fb_reply("OKAY","read-only TE sample recorded; use oem log");return;
+ }
+ if(str_eq(cmd,"oem op13-slider-probe")){
+  if(busy){fb_reply("FAIL","kernel running");return;}
+  int r=op13_slider_probe();
+  fb_reply(r?"FAIL":"OKAY","AK09970 sensor probe; use oem log");return;
  }
  if(str_eq(cmd,"oem sm8750-display-info")){
   if(busy){fb_reply("FAIL","kernel running");return;}

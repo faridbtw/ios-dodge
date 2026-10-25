@@ -192,7 +192,7 @@ touch_write(__unused dev_t dev, struct uio *uio, __unused int ioflag)
 		if (error) {
 			break;
 		}
-		if (t.type < REDWOOD_TOUCH_DOWN || t.type > REDWOOD_BUTTON_UP) {
+		if (t.type < REDWOOD_TOUCH_DOWN || t.type > REDWOOD_SLIDER) {
 			return EINVAL;
 		}
 		touch_post(t.type, t.finger, t.x, t.y, false);
@@ -221,6 +221,7 @@ redwood_input_init(void)
 	redwood_s3910_init();
 	redwood_buttons_init();
 	redwood_op13_buttons_init();
+	redwood_op13_slider_init();
 	redwood_battery_init();
 	op13_batt_adsp_init();
 	redwood_ufs_init();

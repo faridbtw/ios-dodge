@@ -26,6 +26,14 @@ build = ({'payload_sha256': payload_hash, 'cmdline': entries['cmdline'].rstrip(b
 assert build['payload_sha256'] == payload_hash
 loader_hash = ('f26410ca510dcb7352f5c0b814ca435aaefe05bdc3ed1697ef5091b79d588cb8' if original
                else '29f2d04a2db4a684d6436564e3f3a916fbde01bb7081a9604882665b4052a86e')
+if boot.get('slider') == '1':
+    assert build.get('slider') is True and boot.get('slider_power') == '1'
+    loader = ROOT / build['loader']
+    loader_hash = build['loader_sha256']
+    packaging = json.loads(loader.with_suffix('.json').read_text())
+    assert packaging['source_sha256'] == 'f26410ca510dcb7352f5c0b814ca435aaefe05bdc3ed1697ef5091b79d588cb8'
+    assert packaging['image_sha256'] == loader_hash
+    assert all(packaging[k] for k in ['other_ffs_unchanged', 'bootshim_unchanged', 'dtb_unchanged', 'ramdisk_and_signature_bytes_unchanged'])
 assert hashlib.sha256(loader.read_bytes()).hexdigest() == loader_hash
 assert boot['loader_return_after'] == '0' and boot['cpus'] == ('1' if original else '8')
 assert all(boot.get(k) == '0' for k in ['gpu', 'adreno', 'metal', 'ufs', 'ufs_write', 'var_store', 'cpufreq'])
@@ -87,6 +95,8 @@ fb(['stage', str(payload)], timeout=20)
 fb(['oem', 'ramdisk'])
 print('Uploading iOS system image into RAM', flush=True)
 fb(['stage', str(ROOT / 'system.apfs')], timeout=120)
+if boot.get('slider') == '1':
+    fb(['oem', 'op13-slider-probe'])
 fb(['oem', 'sm8750-touch-arm'], timeout=15)
 fb(['oem', 'run', '0'])
 (out / 'RESULT.json').write_text(json.dumps({

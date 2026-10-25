@@ -1,0 +1,40 @@
+{
+  "task": "OnePlus13 alert slider",
+  "mapping": {
+    "bottom": "ring",
+    "middle": "silent",
+    "top": "Do Not Disturb"
+  },
+  "hardware": {
+    "sensor": "AK09970",
+    "i2c_address": "0x10",
+    "SDA_GPIO": 80,
+    "SCL_GPIO": 81,
+    "TLMM_pages": [
+      "0x0f150000",
+      "0x0f151000"
+    ],
+    "power": "DT pm_humu_l1 / RPMh ldob1, CmdDb address0x40700,1800mV,HPM7,enable1",
+    "firmware_power_interface": "RpmhDxe10001, CmdDbDxe10000; ABI verified against extracted phone binaries"
+  },
+  "source_references": {
+    "kernel": "haxi0/iphont-xnu-kernel instantnoodle de24a3774550ef74e28301e6174f29f08fba4360",
+    "userland": "haxi0/iphont-xnu-userland d2c1e870d39ff79a08988e58fd15787200d0faf5",
+    "sensor_driver": "OnePlus SM8750 modules a85bac41e21a790e216039cde1d34a6c5d6416d1 digital_hall_ic/oplus_ak09970.c"
+  },
+  "validation": {
+    "UEFI_sensor_identity_and_XYZ": "PASS sensor-probe-v4/loader.log",
+    "native_physical_positions": "PASS: bottom,middle,top received in backboardd; native-probe-v1/observations.txt",
+    "SpringBoard_silent": "PASS: ringer silent (it was ringing)",
+    "Do_Not_Disturb_activation": "PASS: user confirmed Silent Mode and Do Not Disturb in eight-core interactive build",
+    "host": "Open drain and ACK/data, NACK/stuck-lines timeout, restored muxes, calibrated classifications/mirrored axes and interference rejection passed",
+    "kernel_and_dylibs": "Built successfully",
+    "APFS": "Every regular file read back and compared; only two injection dylibs replaced",
+    "interactive_confirmation": "User selected Both Silent Mode and Do Not Disturb work"
+  },
+  "interactive_payload": "experimental/slider/live-original-compositor-v1/payload.bin",
+  "previous_working_payload_preserved": "experimental/battery/live-original-compositor-v1/payload.bin",
+  "phone_partition_writes": false,
+  "alert_slider_working": true,
+  "raw_evidence": "Device logs, calibration and firmware are local-only and excluded from this repository."
+}

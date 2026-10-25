@@ -27,6 +27,10 @@
 #define REDWOOD_BUTTON_VOLUME_UP 2
 #define REDWOOD_BUTTON_VOLUME_DOWN 3
 #define REDWOOD_BUTTON_HOME     4
+#define REDWOOD_SLIDER          6
+#define REDWOOD_SLIDER_DOWN     1
+#define REDWOOD_SLIDER_MIDDLE   2
+#define REDWOOD_SLIDER_UP       3
 
 struct redwood_touch {
 	uint64_t time;                  /* mach_absolute_time() when the sample was posted */

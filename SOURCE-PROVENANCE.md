@@ -36,3 +36,13 @@ The faster compositor-only image used the earlier validated kernel with SHA-256:
 ## License boundaries
 
 Retain the original notices in every source subtree. The kernel project and XNU include Apple Public Source License material; userland has its upstream MIT license; the two vendor PMIC reference files carry GPL-2.0-only notices. Firmware byte arrays without a clear source license, vendor UEFI binary resources, SDKs, firmware images and extracted iOS system components are excluded from this snapshot.
+
+## Alert slider
+
+- OnePlus 8 sensor/event reference: `haxi0/iphont-xnu-kernel`, branch `instantnoodle`, commit `de24a3774550ef74e28301e6174f29f08fba4360`.
+- iOS ringer/Focus reference: `haxi0/iphont-xnu-userland`, commit `d2c1e870d39ff79a08988e58fd15787200d0faf5`.
+- Dodge AK09970 register protocol: OnePlus SM8750 vendor modules commit `a85bac41e21a790e216039cde1d34a6c5d6416d1`, `vendor/oplus/kernel/device_info/tri_state_key/digital_hall_ic/oplus_ak09970.c`.
+- Hardware profile: captured phone FDT identifies AK09970 at I2C0x10 on GPIO80/81, supplied by pm_humu_l1/RPMh ldob1 at1800mV. The older OnePlus8 IST8801 pair was not copied as a hardware profile.
+- Firmware RPMh/CmdDb ABI was checked against the actual phone's UEFI binaries. Extracted binaries and vendor SDK headers are excluded.
+- The timed native test captured bottom/middle/top events and SpringBoard switching to silent. The user confirmed Silent Mode and Do Not Disturb in the final eight-core build. The final DND service requests execute on a background queue.
+- `validation/alert-slider/` records artifact hashes and sanitized results. Factory calibration is supplied locally and is redacted from shared command-line metadata. Device logs and system/firmware images are excluded.

@@ -117,6 +117,7 @@ bsd/dev/redwood_s3910_protocol.c	standard
 bsd/dev/redwood_s3910_board.c	standard
 bsd/dev/redwood_buttons.c	standard
 bsd/dev/redwood_op13_buttons.c	standard
+bsd/dev/redwood_op13_slider.c	standard
 bsd/dev/op13_buttons.c	standard
 bsd/dev/redwood_battery.c	standard
 bsd/dev/op13_battery_adsp.c	standard

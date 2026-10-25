@@ -1,0 +1,23 @@
+{
+  "experimental": true,
+  "device_validated": true,
+  "slider": true,
+  "mapping": "bottom ring; middle silent; top DND",
+  "live_battery_enabled": true,
+  "hardware_gpu_acceleration": false,
+  "renderer": "CoreAnimation software",
+  "source_payload_sha256": "cc934945f1fd93a526a16ef27582c7be6b59c76c3537ef05f1d10fbed12d993a",
+  "payload_sha256": "e7965f334f65401b39411dad1ddd9674b6076f92f124542c3a31a12e7a9132b2",
+  "kernel_sha256": "8be325d218a0f54a6e04db2f0c79aca180adac4746fb9ce1f423af485e4c1a3b",
+  "loader": "experimental/slider/sensor-probe-v5/dodge-slider-probe.img",
+  "loader_sha256": "93ab2e188d605d693d1d5c38a038e6dc76f3a07b2651b12999aac1f38c03e05d",
+  "modified_root_files": [
+    "/lib/libredwood-sb.dylib",
+    "/lib/libredwood.dylib"
+  ],
+  "phone_partition_writes": false,
+  "user_confirmed_slider": true,
+  "user_confirmed_silent_and_dnd": true,
+  "cmdline_template": "cpus=8 ufs=0 ufs_write=0 var_store=0 cpufreq=0 touchscreen=2 sm8750_touch_hw=1 touch_steps=4 touch_poll_us=4000 buttons=2 buttons_steps=5 gpu=0 adreno=0 display_probe=0 sm8750_gpu=1 gl=0 metal=0 wifi=0 adsp=0 loader_return_after=0 epoch=1792763855 gicr_stride=0x40000 op13_batt=4 fb_hz=60 slider=1 slider_power=1 slider_cal=<local-factory-calibration>",
+  "calibration_redacted": true
+}

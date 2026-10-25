@@ -744,6 +744,8 @@ extern void IOHIDEventSetIntegerValue(IOHIDEventRef event, uint32_t field, CFInd
 #define HID_CLIENT_RATE_CONTROLLED      3       /* what IOHIDEventSystemClientCreate() makes */
 #define HID_PAGE_DIGITIZER              0x0d
 #define HID_USAGE_TOUCH_SCREEN          0x04
+#define HID_PAGE_TELEPHONY              0x0b
+#define HID_USAGE_RINGER_SWITCH          0x2e
 #define HID_PAGE_CONSUMER               0x0c
 #define HID_USAGE_CONSUMER_CONTROL      0x01
 #define HID_USAGE_POWER                 0x30    /* the lock button */
@@ -992,6 +994,32 @@ publish_lock_button(bool down)
 }
 
 static void
+send_slider(IOHIDServiceClientRef buttons, const struct redwood_touch *t)
+{
+	static const char *const names[] = { "?", "down: ring", "in the middle: silent", "up: ring, Do Not Disturb" };
+	static int token = NOTIFY_TOKEN_INVALID;
+	IOHIDEventRef event;
+
+	if (t->finger < REDWOOD_SLIDER_DOWN || t->finger > REDWOOD_SLIDER_UP) {
+		return;
+	}
+	event = IOHIDEventCreateKeyboardEvent(NULL, t->time, HID_PAGE_TELEPHONY, HID_USAGE_RINGER_SWITCH,
+	    t->finger != REDWOOD_SLIDER_MIDDLE, 0);
+	if (event == NULL) return;
+	IOHIDEventSetIntegerValue(event, FIELD_IS_BUILT_IN, 1);
+	IOHIDVirtualServiceClientDispatchEvent(buttons, event);
+	CFRelease(event);
+	if (token == NOTIFY_TOKEN_INVALID && notify_register_check("com.redwood.slider", &token) != NOTIFY_STATUS_OK) {
+		token = NOTIFY_TOKEN_INVALID;
+	}
+	if (token != NOTIFY_TOKEN_INVALID) {
+		notify_set_state(token, t->finger);
+		notify_post("com.redwood.slider");
+	}
+	say("redwood: input: the alert slider is %s\n", names[t->finger]);
+}
+
+static void
 send_button(IOHIDServiceClientRef buttons, const struct redwood_touch *t)
 {
 	uint32_t usage = t->finger == REDWOOD_BUTTON_LOCK ? HID_USAGE_POWER : t->finger == REDWOOD_BUTTON_HOME ? HID_USAGE_MENU :
@@ -999,6 +1027,10 @@ send_button(IOHIDServiceClientRef buttons, const struct redwood_touch *t)
 	    HID_USAGE_VOLUME_DOWN : 0;
 	IOHIDEventRef event;
 
+	if (t->type == REDWOOD_SLIDER) {
+		send_slider(buttons, t);
+		return;
+	}
 	if (usage == 0) {
 		return;
 	}
@@ -1071,6 +1103,15 @@ input_thread(__unused void *arg)
 	dispatch_semaphore_signal(input_services_made); /* see wait_for_als_arrival() */
 	if (screen == NULL) {
 		return NULL;
+	}
+
+	{
+		uint32_t position = 0;
+		size_t size = sizeof(position);
+		if (buttons != NULL && sysctlbyname("kern.redwood.slider", &position, &size, NULL, 0) == 0 && position != 0) {
+			struct redwood_touch slider = { .time = mach_absolute_time(), .type = REDWOOD_SLIDER, .finger = position };
+			send_slider(buttons, &slider);
+		}
 	}
 
 	while (read(device, &t, sizeof(t)) == (ssize_t)sizeof(t)) {

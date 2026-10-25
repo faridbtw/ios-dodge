@@ -14,6 +14,7 @@ Verified on the connected OnePlus 13 on 25 October 2026:
 - Wallpaper, icons and readable text are visible with the full wallpaper service configuration.
 - Battery percentage and charging indication work. The user confirmed the charging bolt disappears when unplugged and returns after reconnecting.
 - The final timed battery diagnostic recorded 39 fresh samples and recovered Android by cold reset.
+- The alert slider works: bottom rings, middle is silent, top enables Do Not Disturb. All physical positions were captured, and the user confirmed Silent Mode and Do Not Disturb in the eight-core interactive build.
 
 Adreno 830 hardware acceleration is unfinished. GPU command submission probes are experimental and disabled in the interactive configuration. Smooth 120 FPS operation is not established. Battery health, design capacity and cycle metadata remain unverified and are not published by the new bridge.
 
@@ -60,6 +61,14 @@ python3 tools/build-xnu-macos.py build
 
 With the local dependencies and baseline inputs restored, `tools/make-op13-test-payload.py --help` describes diagnostic and interactive payload options. The selected interactive profile is eight cores, `gl=0`, `fb_hz=60`, no benchmarks and `--battery-live` with matching device firmware. The older `adsp` driver remains disabled; `op13_batt=4` selects the new live battery transport.
 
+The slider transport and position checks run without phone images or firmware:
+
+```sh
+python3 tools/test-op13-slider.py
+```
+
+An optional `--dtb LOCAL_ANDROID.dtb` also checks the sensor address and GPIOs against your locally captured device tree. See the alert-slider section in `QUICKSTART.txt` for its matching loader, local calibration and payload workflow.
+
 The battery protocol checks can be run independently:
 
 ```sh
@@ -71,5 +80,7 @@ Tests that use device firmware or GPU vendor snapshots require those local input
 ## Attribution and licenses
 
 Built on HackiOS kernel/userland, Apple XNU, Project-Silicium and Qualcomm/OnePlus platform work. The modern ADSP transport was adapted from [hxfuxyy/ios-macan](https://github.com/hxfuxyy/ios-macan) for Dodge's own memory map and PMIC protocol.
+
+The slider event/Focus path was adapted from [haxi0/iphont-xnu-userland](https://github.com/haxi0/iphont-xnu-userland) and the [OnePlus 8 kernel branch](https://github.com/haxi0/iphont-xnu-kernel/tree/instantnoodle), with the AK09970 sensor and power path adapted for Dodge.
 
 The root [LICENSE](LICENSE) covers original project material as stated in that file. XNU and kernel-derived code retain APSL and other original file notices; userland and vendor reference files retain their respective licenses. This repository does not relicense third-party code.
