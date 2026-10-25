@@ -2,7 +2,7 @@ ios-dodge: current working configuration
 =======================================
 
 Device: OnePlus 13 / dodge / SM8750. Android fastboot product: sun.
-Current iOS UEFI: experimental/uefi-turtle/stable-overlay-v11/dodge-turtle-stable.img
+Current iOS UEFI: experimental/uefi-turtle/stable-overlay-v11/dodge-ios-uefi.img
 Current local payload: experimental/slider/live-original-compositor-v1/payload.bin
 These paths describe the working development bundle; binaries are not in Git.
 The older dodge-known-v31-usb-loader.img is the build baseline, not the
@@ -31,7 +31,7 @@ python3 tools/boot-op13-play.py --serial YOUR_SERIAL --payload experimental/slid
 
 Manual current iOS boot sequence, after the matched phone enters fastboot:
 
-fastboot -s YOUR_SERIAL boot experimental/uefi-turtle/stable-overlay-v11/dodge-turtle-stable.img
+fastboot -s YOUR_SERIAL boot experimental/uefi-turtle/stable-overlay-v11/dodge-ios-uefi.img
 fastboot -s xnuloader stage experimental/slider/live-original-compositor-v1/payload.bin
 fastboot -s xnuloader oem ramdisk
 fastboot -s xnuloader stage system.apfs
@@ -93,7 +93,7 @@ See validation/alert-slider/ for sanitized results and build identities.
 UEFI turtle, live logs and USB reconnect (validated 25 October 2026)
 -----------------------------------------------------------------
 Current source: source/touch-runtime-v15/
-Current local image: experimental/uefi-turtle/stable-overlay-v11/dodge-turtle-stable.img
+Current local image: experimental/uefi-turtle/stable-overlay-v11/dodge-ios-uefi.img
 The source-only repository does not include that image or system.apfs.
 
 The turtle stays at the physical screen center at its native 300x300 size.
@@ -118,8 +118,8 @@ They are excluded from Git. The packer checks the baseline image hash and
 the exact original loader routes; use the provenance hashes in validation/.
 
 PATH=/opt/homebrew/bin:$PATH bash source/touch-runtime-v15/build-probe.sh
-python3 tools/pack-op13-diagnostic-loader.py --loader source/touch-runtime-v15/loader.efi --output experimental/uefi-turtle/stable-overlay-v11/dodge-turtle-stable-base.img
-python3 tools/make-op13-turtle-uefi.py --source experimental/uefi-turtle/stable-overlay-v11/dodge-turtle-stable-base.img --output experimental/uefi-turtle/stable-overlay-v11/dodge-turtle-stable.img
+python3 tools/pack-op13-diagnostic-loader.py --loader source/touch-runtime-v15/loader.efi --output experimental/uefi-turtle/stable-overlay-v11/dodge-ios-uefi-base.img
+python3 tools/make-op13-turtle-uefi.py --source experimental/uefi-turtle/stable-overlay-v11/dodge-ios-uefi-base.img --output experimental/uefi-turtle/stable-overlay-v11/dodge-ios-uefi.img
 
 The second packer changes only the firmware splash bitmap in the first
 packer's output. Both steps verify checksums, compression round trips and
@@ -129,7 +129,7 @@ PE build timestamps can change image hashes between builds.
 
 Boot the resulting image only into RAM:
 adb -s YOUR_SERIAL reboot bootloader
-fastboot -s YOUR_SERIAL boot experimental/uefi-turtle/stable-overlay-v11/dodge-turtle-stable.img
+fastboot -s YOUR_SERIAL boot experimental/uefi-turtle/stable-overlay-v11/dodge-ios-uefi.img
 
 Use the existing staging/slider/touch sequence for the interactive iOS
 payload. The play helper prefers the custom image when its local receipt

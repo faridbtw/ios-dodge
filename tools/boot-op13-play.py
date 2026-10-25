@@ -13,7 +13,7 @@ ROOT = Path(__file__).resolve().parents[1]
 
 def interactive_loader_override(root):
     """Use the phone-tested custom loader, verifying both packaging stages."""
-    candidate = root / 'experimental/uefi-turtle/stable-overlay-v11/dodge-turtle-stable.img'
+    candidate = root / 'experimental/uefi-turtle/stable-overlay-v11/dodge-ios-uefi.img'
     if not candidate.exists():
         candidate = root / 'experimental/uefi-turtle/full-flow-v9/dodge-turtle-full-flow.img'
         if not candidate.exists():

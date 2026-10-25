@@ -19,8 +19,8 @@ sha = lambda b: hashlib.sha256(b).hexdigest()
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument('--source', type=Path, default=ROOT / 'experimental/uefi-turtle/stable-overlay-v11/dodge-turtle-stable-base.img')
-    parser.add_argument('--output', type=Path, default=ROOT / 'experimental/uefi-turtle/stable-overlay-v11/dodge-turtle-stable.img')
+    parser.add_argument('--source', type=Path, default=ROOT / 'experimental/uefi-turtle/stable-overlay-v11/dodge-ios-uefi-base.img')
+    parser.add_argument('--output', type=Path, default=ROOT / 'experimental/uefi-turtle/stable-overlay-v11/dodge-ios-uefi.img')
     args = parser.parse_args()
     source = args.source.resolve()
     receipt = json.loads(source.with_suffix('.json').read_text())

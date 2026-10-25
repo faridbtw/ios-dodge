@@ -1,5 +1,5 @@
 {
-  "source": "experimental/uefi-turtle/stable-overlay-v11/dodge-turtle-stable-base.img",
+  "source": "experimental/uefi-turtle/stable-overlay-v11/dodge-ios-uefi-base.img",
   "source_sha256": "0c5b07763b2f2ce0032b37bcc7f8bdde8b42b75591d9c2af3ce69ac7153ada24",
   "image_sha256": "36e6d04439b68a425e94f14a8c7d0648fd89f3b2675609685e03999160226934",
   "changed_inner_ffs": [
