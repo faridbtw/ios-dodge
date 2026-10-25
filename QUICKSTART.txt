@@ -71,3 +71,55 @@ Optional hardware-profile check with your locally captured FDT:
 python3 tools/test-op13-slider.py --dtb LOCAL_ANDROID.dtb
 
 See validation/alert-slider/ for sanitized results and build identities.
+
+UEFI turtle, live logs and USB reconnect (validated 25 October 2026)
+-----------------------------------------------------------------
+Current source: source/touch-runtime-v15/
+Current local image: experimental/uefi-turtle/stable-overlay-v11/dodge-turtle-stable.img
+The source-only repository does not include that image or system.apfs.
+
+The turtle stays at the physical screen center at its native 300x300 size.
+Log glyphs are 16x32 pixels. Text flows normally through the full screen,
+including behind the turtle; no empty band is reserved for the logo.
+The loader scrolls text in cached RAM and composites the turtle during
+dirty-row display updates, so it never removes the logo between updates.
+Commands and approximately 5% upload milestones appear live. Screen writes
+stop when the kernel takes over the display.
+
+USB disconnect/reconfiguration now aborts old endpoint transfers and clears
+queued command ownership. Failed receives continue pumping USB events.
+Active notifications are not treated as completed transfers. A partial
+payload download must be restaged; completed RAM images remain available.
+Two physical cable cycles recovered without restarting the loader, with
+commands, payload staging and log downloads checked afterward.
+
+Supply these matching local baseline inputs before packaging:
+  dodge-known-v31-usb-loader.img
+  loader-known-v31.efi
+They are excluded from Git. The packer checks the baseline image hash and
+the exact original loader routes; use the provenance hashes in validation/.
+
+PATH=/opt/homebrew/bin:$PATH bash source/touch-runtime-v15/build-probe.sh
+python3 tools/pack-op13-diagnostic-loader.py --loader source/touch-runtime-v15/loader.efi --output experimental/uefi-turtle/stable-overlay-v11/dodge-turtle-stable-base.img
+python3 tools/make-op13-turtle-uefi.py --source experimental/uefi-turtle/stable-overlay-v11/dodge-turtle-stable-base.img --output experimental/uefi-turtle/stable-overlay-v11/dodge-turtle-stable.img
+
+The second packer changes only the firmware splash bitmap in the first
+packer's output. Both steps verify checksums, compression round trips and
+unchanged unrelated firmware files, BootShim, DTB and ramdisk/signature bytes.
+Freshly built receipts have device_validated=false until checked on a phone.
+PE build timestamps can change image hashes between builds.
+
+Boot the resulting image only into RAM:
+adb -s YOUR_SERIAL reboot bootloader
+fastboot -s YOUR_SERIAL boot experimental/uefi-turtle/stable-overlay-v11/dodge-turtle-stable.img
+
+Use the existing staging/slider/touch sequence for the interactive iOS
+payload. The play helper prefers the custom image when its local receipt
+records successful phone validation and both packaging stages verify.
+For a new build, boot it explicitly and verify it before changing that flag.
+
+Host checks:
+python3 tools/test-op13-usb-reconnect.py
+python3 tools/test-op13-turtle-overlay.py
+
+See validation/uefi/ for sanitized results. No audio work is included here.

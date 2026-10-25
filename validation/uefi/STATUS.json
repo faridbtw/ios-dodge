@@ -1,0 +1,49 @@
+{
+  "device": "OnePlus 13 / dodge / SM8750",
+  "profile": "stable-overlay-v11",
+  "ram_boot_passed": true,
+  "native_logo_pixels": [
+    300,
+    300
+  ],
+  "logo_position": "centered",
+  "font_glyph_pixels": [
+    16,
+    32
+  ],
+  "log_layout": "full screen; centered turtle composited over text, no reserved band",
+  "display_updates": "owned cached RAM surface with dirty-row composition; throttled updates and command-completion flush",
+  "scroll_command_seconds": [
+    0.038,
+    0.196,
+    0.255
+  ],
+  "repeated_scroll_commands_passed": 4,
+  "usb_reconnect": {
+    "physical_cable_cycles_passed": 2,
+    "same_loader_session": true,
+    "previously_staged_payload_preserved": true,
+    "commands_and_bidirectional_transfers_recovered": true,
+    "tested_profile": "usb-reconnect-v8",
+    "transport_unchanged_in_current_profile": true
+  },
+  "interactive_ios_boot_started": true,
+  "interactive_profile": "eight cores, original software compositor, live battery and alert slider; no return timer",
+  "host_checks": [
+    "ASAN/UBSAN actual transport with cancellation, failed-send event polling, timeouts and 12 simulated cable cycles",
+    "ASAN/UBSAN actual text-surface/overlay integration: normal full-screen flow, visible physical logo between every character and scroll, framebuffer guards",
+    "ARM64 loader build",
+    "FFS, LZMA, gzip and both packaging-stage hash checks"
+  ],
+  "sound_work": "paused; no audio fix included",
+  "private_device_logs_in_repository": false,
+  "system_image_in_repository": false,
+  "phone_partition_writes": false,
+  "repository_validation": {
+    "native_arm64_build": "passed",
+    "executable_and_data_sections_match_phone_tested_loader": true,
+    "usb_transport_sanitizers": "passed",
+    "overlay_sanitizers": "passed",
+    "slider_regression": "passed"
+  }
+}

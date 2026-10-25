@@ -46,3 +46,14 @@ Retain the original notices in every source subtree. The kernel project and XNU 
 - Firmware RPMh/CmdDb ABI was checked against the actual phone's UEFI binaries. Extracted binaries and vendor SDK headers are excluded.
 - The timed native test captured bottom/middle/top events and SpringBoard switching to silent. The user confirmed Silent Mode and Do Not Disturb in the final eight-core build. The final DND service requests execute on a background queue.
 - `validation/alert-slider/` records artifact hashes and sanitized results. Factory calibration is supplied locally and is redacted from shared command-line metadata. Device logs and system/firmware images are excluded.
+
+## UEFI display and USB reconnect
+
+- Current loader source is published at `source/touch-runtime-v15/`, matching the locally phone-tested `stable-overlay-v11` profile. The baseline firmware route and omitted binary inputs remain unchanged.
+- The Qualcomm USB Device Protocol ABI was checked against `Silicon/Qualcomm/QcomPkg/Include/Protocol/EFIUsbDevice.h` in Project-Silicium/Mu-Silicium at `4cba43c90e02cdbefbcd9fcdbda33d2328deaec0`. No vendor firmware binaries or SDK headers are added by this update.
+- The larger console uses the existing XNU ISO Latin-1 font, retaining its source notices and the font author's permission notice in `op13_console_font.h`.
+- Turtle artwork was generated for this project. `assets/uefi/` includes the original PNG, native bitmap and prompt; `turtle_pixels.h` contains the derived grayscale pixels used by the loader.
+- The stable overlay uses owned cached RAM for the text surface. Its sanitizer test compares underlying text against a normal full-screen console and checks that the physical turtle remains visible throughout updates, scrolling and memory guard checks.
+- Two physical cable cycles passed on the `usb-reconnect-v8` profile. Commands recovered in the same session; a previously staged payload remained usable, and new uploads/log downloads passed. The USB transport and polling functions are unchanged in `stable-overlay-v11`.
+- Repeated scrolling on the final profile remained responsive. The same loader then started the working eight-core iOS payload with battery and slider support.
+- `validation/uefi/` contains sanitized status and artifact hashes. Boot images, system images, raw device logs, session cookies and device identifiers are omitted.

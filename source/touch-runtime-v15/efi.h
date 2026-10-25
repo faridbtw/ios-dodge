@@ -30,6 +30,17 @@ struct efi_text_output;
 typedef struct efi_text_output {
 	void *reset;
 	efi_status (EFIAPI *output_string)(struct efi_text_output *self, const char16 *str);
+    void *test_string;
+    efi_status (EFIAPI *query_mode)(struct efi_text_output *self, uint64_t mode, uint64_t *columns, uint64_t *rows);
+    efi_status (EFIAPI *set_mode)(struct efi_text_output *self, uint64_t mode);
+    efi_status (EFIAPI *set_attribute)(struct efi_text_output *self, uint64_t attribute);
+    efi_status (EFIAPI *clear_screen)(struct efi_text_output *self);
+    efi_status (EFIAPI *set_cursor_position)(struct efi_text_output *self, uint64_t column, uint64_t row);
+    efi_status (EFIAPI *enable_cursor)(struct efi_text_output *self, uint8_t visible);
+    struct efi_text_output_mode {
+        int32_t max_mode, mode, attribute, cursor_column, cursor_row;
+        uint8_t cursor_visible;
+    } *mode;
 } efi_text_output;
 
 enum { EfiLoaderData = 2, EfiConventionalMemory = 7 };

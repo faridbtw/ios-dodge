@@ -9,6 +9,37 @@ import subprocess
 import time
 
 ROOT = Path(__file__).resolve().parents[1]
+
+
+def interactive_loader_override(root):
+    """Use the phone-tested custom loader, verifying both packaging stages."""
+    candidate = root / 'experimental/uefi-turtle/stable-overlay-v11/dodge-turtle-stable.img'
+    if not candidate.exists():
+        candidate = root / 'experimental/uefi-turtle/full-flow-v9/dodge-turtle-full-flow.img'
+        if not candidate.exists():
+            candidate = root / 'experimental/uefi-turtle/usb-reconnect-v8/dodge-turtle-reconnect.img'
+    if not candidate.exists():
+        return None
+    final = json.loads(candidate.with_suffix('.json').read_text())
+    if not (final.get('device_validated') and final.get('usb_reconnect')):
+        return None
+    assert final['changed_inner_ffs'] == ['7bb28b99-61bb-11d5-9a5d-0090273fc14d']
+    assert all(final[k] for k in ['other_inner_ffs_unchanged', 'loader_executables_unchanged',
+                                  'bootshim_unchanged', 'dtb_unchanged', 'ramdisk_and_signature_bytes_unchanged'])
+    base = (root / final['source']).resolve()
+    assert base.is_relative_to(root.resolve())
+    assert hashlib.sha256(base.read_bytes()).hexdigest() == final['source_sha256']
+    first = json.loads(base.with_suffix('.json').read_text())
+    assert first['image_sha256'] == final['source_sha256']
+    assert first['source_sha256'] == 'f26410ca510dcb7352f5c0b814ca435aaefe05bdc3ed1697ef5091b79d588cb8'
+    assert set(first['changed_inner_ffs']) == {'fb14ecd8-9432-48b8-a692-ae4bc19d568b',
+        '50670071-478f-4be7-ad13-8754f379c62f', '643d4788-63c8-40d2-bd7a-6842e66850d1'}
+    assert all(first[k] for k in ['other_ffs_unchanged', 'bootshim_unchanged', 'dtb_unchanged',
+                                 'ramdisk_and_signature_bytes_unchanged'])
+    assert hashlib.sha256(candidate.read_bytes()).hexdigest() == final['image_sha256']
+    return candidate, final['image_sha256']
+
+
 p = argparse.ArgumentParser(description=__doc__)
 p.add_argument('--serial', required=True)
 p.add_argument('--payload', required=True, type=Path)
@@ -34,6 +65,9 @@ if boot.get('slider') == '1':
     assert packaging['source_sha256'] == 'f26410ca510dcb7352f5c0b814ca435aaefe05bdc3ed1697ef5091b79d588cb8'
     assert packaging['image_sha256'] == loader_hash
     assert all(packaging[k] for k in ['other_ffs_unchanged', 'bootshim_unchanged', 'dtb_unchanged', 'ramdisk_and_signature_bytes_unchanged'])
+    preferred = interactive_loader_override(ROOT)
+    if preferred:
+        loader, loader_hash = preferred
 assert hashlib.sha256(loader.read_bytes()).hexdigest() == loader_hash
 assert boot['loader_return_after'] == '0' and boot['cpus'] == ('1' if original else '8')
 assert all(boot.get(k) == '0' for k in ['gpu', 'adreno', 'metal', 'ufs', 'ufs_write', 'var_store', 'cpufreq'])

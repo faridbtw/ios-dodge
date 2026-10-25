@@ -178,10 +178,12 @@ str_eq(const char *a, const char *b)
 }
 
 /*
- * Set once the loader takes commands over USB: its log travels that way, and
- * the screen is left to the kernel (and to "oem screenshot").
+ * Suppress screen writes while the kernel owns the display. In idle UEFI,
+ * the live console and USB log both remain available.
  */
 static int screen_quiet;
+static int screen_log_char(char c);
+static void screen_log_flush(int force);
 
 static void
 put_char(char c)
@@ -191,6 +193,7 @@ put_char(char c)
 	if (log_len < sizeof(log_buf) - 1) {
 		log_buf[log_len++] = c;
 	}
+    if (!screen_quiet && screen_log_char(c)) return;
 	if (ST->con_out != NULL && !screen_quiet) {
 		if (c == '\n') {
 			w[0] = '\r', w[1] = '\n';
@@ -2685,6 +2688,128 @@ static struct {
 	uint64_t base;
 	uint32_t width, height, stride;
 } SCREEN;
+static uint64_t console_columns, console_rows;
+
+/* Use the widest/largest advertised text mode, rather than centered VGA 80x25. */
+static void expand_console(void)
+{
+    efi_text_output *con = ST->con_out;
+    if (!con || !con->mode || !con->query_mode || !con->set_mode ||
+        con->mode->max_mode < 1 || con->mode->max_mode > 64) return;
+    int saved_quiet = screen_quiet;
+    screen_quiet = 1;
+    uint64_t best = 0, columns = 0, rows = 0;
+    for (int32_t mode = 0; mode < con->mode->max_mode; mode++) {
+        uint64_t c = 0, r = 0;
+        efi_status status = con->query_mode(con, (uint64_t)mode, &c, &r);
+        print("console mode %d: %d x %d status %x\n", (uint64_t)mode, c, r, status);
+        if (EFI_ERROR(status) || !c || !r || c > 1024 || r > 1024) continue;
+        if (c * r > columns * rows || (c * r == columns * rows && c > columns)) {
+            best = (uint64_t)mode; columns = c; rows = r;
+        }
+    }
+    if (columns && rows) {
+        efi_status status = con->set_mode(con, best);
+        print("console selected mode %d: %d x %d status %x\n", best, columns, rows, status);
+        if (!EFI_ERROR(status)) {
+            console_columns = columns; console_rows = rows;
+            if (con->set_attribute) con->set_attribute(con, 7);
+            if (con->enable_cursor) con->enable_cursor(con, 0);
+            if (GOP && GOP->mode && GOP->mode->info) {
+                SCREEN.base = GOP->mode->fb_base;
+                SCREEN.width = GOP->mode->info->width;
+                SCREEN.height = GOP->mode->info->height;
+                SCREEN.stride = GOP->mode->info->pixels_per_scanline * 4;
+            }
+        }
+    }
+    screen_quiet = saved_quiet;
+}
+
+#include "op13_big_console.h"
+#include "turtle_pixels.h"
+static struct op13_big_console big_console;
+static int big_console_ready;
+
+/* Render/scroll in owned cached RAM. Composite the turtle during display
+ * copies, so it is never removed from the physical framebuffer. */
+static uint64_t console_shadow;
+static uint32_t console_dirty_top, console_dirty_bottom;
+static uint64_t console_last_flush;
+
+static void screen_log_flush(int force)
+{
+    if (!big_console_ready || screen_quiet || console_dirty_top >= console_dirty_bottom) return;
+    uint64_t now = READ_SYSREG(CNTVCT_EL0);
+    if (!force && now - console_last_flush < READ_SYSREG(CNTFRQ_EL0) / 10) return;
+    uint32_t top = console_dirty_top, bottom = console_dirty_bottom;
+    uint32_t logo_left = (SCREEN.width - 300) / 2, logo_top = (SCREEN.height - 300) / 2;
+    const uint32_t *shadow = (const uint32_t *)(uintptr_t)console_shadow;
+    for (uint32_t y = top; y < bottom; y++) {
+        volatile uint32_t *row = (volatile uint32_t *)(uintptr_t)
+            (SCREEN.base + (uint64_t)y * SCREEN.stride);
+        const uint32_t *source = shadow + (size_t)y * (SCREEN.stride / 4);
+        for (uint32_t x = 0; x < SCREEN.width; x++) {
+            uint32_t pixel = source[x];
+            if (y >= logo_top && y < logo_top + 300 && x >= logo_left && x < logo_left + 300) {
+                uint32_t alpha = turtle_pixels[(y - logo_top) * 300 + x - logo_left];
+                if (alpha) {
+                    uint32_t gray = alpha + ((pixel & 255) * (255 - alpha) + 127) / 255;
+                    pixel = gray | (gray << 8) | (gray << 16);
+                }
+            }
+            row[x] = pixel;
+        }
+    }
+    clean_dcache(SCREEN.base + (uint64_t)top * SCREEN.stride,
+        SCREEN.base + (uint64_t)bottom * SCREEN.stride);
+    console_dirty_top = SCREEN.height;
+    console_dirty_bottom = 0;
+    console_last_flush = now;
+}
+
+static int screen_log_char(char ch)
+{
+    if (!big_console_ready) return 0;
+    uint32_t before_row = big_console.row;
+    int scroll = before_row + 1 == big_console.rows &&
+        (ch == '\n' || ch == '\t' || big_console.column >= big_console.columns);
+    op13_console_char(&big_console, (unsigned char)ch);
+    uint32_t top = scroll ? big_console.top : big_console.top + before_row * OP13_CELL_HEIGHT;
+    uint32_t bottom = scroll ? big_console.top + big_console.rows * OP13_CELL_HEIGHT :
+        big_console.top + (big_console.row + 1) * OP13_CELL_HEIGHT;
+    if (top < console_dirty_top) console_dirty_top = top;
+    if (bottom > console_dirty_bottom) console_dirty_bottom = bottom;
+    if (ch == '\n') screen_log_flush(0);
+    return 1;
+}
+
+/* Draw once while UEFI owns the display; never repaint over a running kernel. */
+static void turtle_splash(void)
+{
+    if (!GOP || !GOP->mode || !GOP->mode->info || !SCREEN.base ||
+        !SCREEN.width || !SCREEN.height || SCREEN.width > 8192 || SCREEN.height > 8192 ||
+        SCREEN.stride < SCREEN.width * 4 || SCREEN.stride % 4 ||
+        (uint64_t)SCREEN.stride * SCREEN.height > GOP->mode->fb_size ||
+        GOP->mode->info->pixel_format > 1) return;
+    uint32_t side = 300; /* Native asset size: no enlargement. */
+    if (side > SCREEN.height / 2) side = SCREEN.height / 2;
+    if (!side) return;
+    uint32_t top = (SCREEN.height - side) / 2;
+    if (top + side > SCREEN.height) return;
+    uint64_t bytes = (uint64_t)SCREEN.stride * SCREEN.height;
+    if (!console_shadow && EFI_ERROR(BS->allocate_pages(AllocateAnyPages, EfiLoaderData,
+        (bytes + 4095) >> 12, &console_shadow))) return;
+    memset((void *)(uintptr_t)console_shadow, 0, (size_t)bytes);
+    big_console_ready = op13_console_init(&big_console, (void *)(uintptr_t)console_shadow,
+        bytes, SCREEN.width, SCREEN.height, SCREEN.stride, 64, SCREEN.height - 32);
+    console_dirty_top = 0;
+    console_dirty_bottom = SCREEN.height;
+    screen_log_flush(1);
+    print("console: larger 16x32 pixel font, %d columns\n", (uint64_t)big_console.columns);
+    print("turtle splash: native %d pixels at screen center\n", (uint64_t)side);
+}
+
 static uint64_t win_base, win_size; /* XNU's physical memory window, claimed once */
 static uint64_t resident_rd_size;   /* root image kept at win_base + RESIDENT_RD_OFFSET, 0 if none */
 static char last_result[64] = "idle";
@@ -3439,6 +3564,7 @@ run_kernel(int have_checkpoint, uint64_t checkpoint)
 			/* Do not enter the kernel at all: exercise only the return path. */
 			jump_to_kernel((uint64_t)(uintptr_t)&loader_return_stub, 0);
 		}
+        screen_quiet = 1; /* The kernel owns the framebuffer after handoff. */
 		if (kernel_mpidr != this_mpidr) {
             touch_runtime_outstanding=touch_runtime_pending;
 			int64_t status = run_on_other_cpu(kernel_mpidr, entry_va + slide, ba_pa, kernel_live, slide, kernel_budget);
@@ -3473,6 +3599,7 @@ run_kernel(int have_checkpoint, uint64_t checkpoint)
 	}
 
 	/* --- the kernel came back ------------------------------------------- */
+    screen_quiet = 0;
     /* Same-core execution cannot race loader commands; reaching this code is
      * a confirmed return. Other-core successful cleanup is idempotent here. */
     touch_runtime_outstanding=0;
@@ -3572,6 +3699,9 @@ static usb_device_protocol *USB;
 static int download_to_ramdisk;     /* set by "oem ramdisk" for the one download that follows */
 static uint8_t *usb_rx_buf, *usb_tx_buf;
 static int usb_connected;
+static int usb_rx_queued, usb_out_pending, usb_in_pending;
+static uint64_t usb_disconnects, usb_connects;
+static char usb_session[17];
 
 static const uint8_t usb_dev_desc[18] = { 18, 1, 0x10, 0x02, 0, 0, 0, 64, 0xd1, 0x18, 0x0d, 0xd0, 0x00, 0x01, 1, 2, 3, 1 };
 static const uint8_t usb_ss_dev_desc[18] = { 18, 1, 0x00, 0x03, 0, 0, 0, 9, 0xd1, 0x18, 0x0d, 0xd0, 0x00, 0x01, 1, 2, 3, 1 };
@@ -3644,82 +3774,150 @@ usb_start(void)
 		return 0;
 	}
 	usb_last_activity = READ_SYSREG(CNTVCT_EL0);
+    for (unsigned i = 0; i < 16; i++) {
+        usb_session[i] = "0123456789abcdef"[(usb_last_activity >> (60 - i * 4)) & 15];
+    }
 	print("usb: started, idle return after %d seconds\n", (uint64_t)USB_IDLE_SECONDS);
 	return 1;
 }
 
-/*
- * Pump controller events until a transfer on `endpoint` finishes.
- * Returns the byte count, or -1 if the transfer was cancelled or the cable
- * state changed. Keeps the watchdog fed while idle.
- */
+/* All synchronous and asynchronous receive paths share link/transfer ownership. */
+static void
+usb_abort_pending(uint8_t endpoint)
+{
+    int *pending = endpoint == USB_EP_OUT ? &usb_out_pending : &usb_in_pending;
+    if (*pending && USB->abort_xfer) USB->abort_xfer(endpoint);
+    *pending = 0;
+    if (endpoint == USB_EP_OUT) usb_rx_queued = 0;
+}
+
+static void
+usb_link_event(uint32_t state)
+{
+    /* A reconfiguration also invalidates any receive queued for the old link. */
+    usb_abort_pending(USB_EP_OUT);
+    usb_abort_pending(USB_EP_IN);
+    download_to_ramdisk = 0;
+    usb_connected = state == UsbDeviceStateConnected;
+    usb_last_activity = READ_SYSREG(CNTVCT_EL0);
+    if (usb_connected) {
+        usb_connects++;
+        print("usb: connected; fresh command receive (session %s)\n", usb_session);
+    } else {
+        usb_disconnects++;
+        print("usb: disconnected; waiting for cable (session %s)\n", usb_session);
+    }
+}
+
+static void
+usb_transfer_event(const usb_device_event_data *data)
+{
+    if (data->transfer.status == UsbDeviceTransferStatusActive) return;
+    if (data->transfer.endpoint_index == USB_EP_OUT) usb_out_pending = 0;
+    if (data->transfer.endpoint_index == USB_EP_IN) usb_in_pending = 0;
+}
+
+/* Always service events before retrying a failed queue submission. Otherwise a
+ * stale endpoint can reject Send forever while its disconnect stays unhandled. */
+static void
+usb_drain_events(void)
+{
+    for (unsigned i = 0; i < 64; i++) {
+        uint32_t msg = UsbDeviceEventNoEvent;
+        uint64_t size = 0;
+        usb_device_event_data data;
+        if (EFI_ERROR(USB->handle_event(&msg, &size, &data))) break;
+        if (msg == UsbDeviceEventNoEvent) break;
+        if (msg == UsbDeviceEventDeviceStateChange) usb_link_event(data.device_state);
+        else if (msg == UsbDeviceEventTransferNotification) usb_transfer_event(&data);
+    }
+}
+
+/* Returns a completed byte count or -1 on cancellation/link change. Active
+ * notifications are not completions. Polling never abandons a queued buffer. */
 static int64_t
 usb_wait(uint8_t endpoint)
 {
-	/* static: a long transfer is many short waits, and the watchdog must be fed across them */
-	static uint64_t last_pet;
-	uint64_t freq = READ_SYSREG(CNTFRQ_EL0), began = READ_SYSREG(CNTVCT_EL0);
-
-	for (;;) {
-		uint32_t msg = UsbDeviceEventNoEvent;
-		uint64_t size = 0;
-		usb_device_event_data data;
-
-		if (USB_IDLE_SECONDS != 0 && running_live == NULL && !touch_diagnostic_retained() &&
-            READ_SYSREG(CNTVCT_EL0) - usb_last_activity > (uint64_t)USB_IDLE_SECONDS * READ_SYSREG(CNTFRQ_EL0)) {
+    static uint64_t last_pet;
+    uint64_t freq = READ_SYSREG(CNTFRQ_EL0), began = READ_SYSREG(CNTVCT_EL0);
+    for (;;) {
+        uint32_t msg = UsbDeviceEventNoEvent;
+        uint64_t size = 0;
+        usb_device_event_data data;
+        if (USB_IDLE_SECONDS != 0 && running_live == NULL && !touch_diagnostic_retained() &&
+            READ_SYSREG(CNTVCT_EL0) - usb_last_activity > (uint64_t)USB_IDLE_SECONDS * freq) {
             print("usb: idle deadline reached, returning to Android\n");
             reboot();
         }
-        USB->handle_event(&msg, &size, &data);
-		if (msg == UsbDeviceEventDeviceStateChange) {
-			usb_connected = (data.device_state == UsbDeviceStateConnected);
-			return -1;
-		}
-		/* with a kernel running, a host that went away must not keep this core from watching it */
-		if (running_live != NULL && READ_SYSREG(CNTVCT_EL0) - began > 3 * freq) {
-			return -1;
-		}
-		if (msg == UsbDeviceEventTransferNotification && data.transfer.endpoint_index == endpoint) {
-			if (data.transfer.status == UsbDeviceTransferStatusCompleteOK && data.transfer.bytes_completed != 0) {
-				usb_last_activity = READ_SYSREG(CNTVCT_EL0);
-			}
-			return data.transfer.status == UsbDeviceTransferStatusCompleteOK ? (int64_t)data.transfer.bytes_completed : -1;
-		}
-		if (READ_SYSREG(CNTVCT_EL0) - last_pet > freq) {
-			last_pet = READ_SYSREG(CNTVCT_EL0);
-			wdt_pet();
-		}
-	}
+        if (EFI_ERROR(USB->handle_event(&msg, &size, &data))) {
+            if (endpoint != 0xff) usb_abort_pending(endpoint);
+            return -1;
+        }
+        if (msg == UsbDeviceEventDeviceStateChange) {
+            usb_link_event(data.device_state);
+            return -1;
+        }
+        if (running_live != NULL && READ_SYSREG(CNTVCT_EL0) - began > 3 * freq) {
+            if (endpoint != 0xff) usb_abort_pending(endpoint);
+            return -1;
+        }
+        if (msg == UsbDeviceEventTransferNotification) {
+            usb_transfer_event(&data);
+            if (data.transfer.endpoint_index == endpoint &&
+                data.transfer.status != UsbDeviceTransferStatusActive) {
+                if (data.transfer.status == UsbDeviceTransferStatusCompleteOK && data.transfer.bytes_completed)
+                    usb_last_activity = READ_SYSREG(CNTVCT_EL0);
+                return data.transfer.status == UsbDeviceTransferStatusCompleteOK ?
+                    (int64_t)data.transfer.bytes_completed : -1;
+            }
+        }
+        if (READ_SYSREG(CNTVCT_EL0) - last_pet > freq) {
+            last_pet = READ_SYSREG(CNTVCT_EL0);
+            wdt_pet();
+        }
+    }
 }
-
-static int usb_rx_queued;       /* usb_poll_command() has left the receive for the next command with the controller */
 
 static int64_t
 usb_rx(uint8_t *buf, uint64_t len)
 {
-	if (usb_rx_queued) {
-		usb_rx_queued = 0;      /* (every command is received the same way, into the same buffer) */
-	} else if (EFI_ERROR(USB->send(USB_EP_OUT, len, buf))) {
-		return -1;
-	}
-	return usb_wait(USB_EP_OUT);
+    if (usb_rx_queued) {
+        usb_rx_queued = 0;
+    } else {
+        usb_drain_events();
+        if (!usb_connected) return -1;
+        if (EFI_ERROR(USB->send(USB_EP_OUT, len, buf))) {
+            /* Abort even when our flag was lost to a firmware bus reset. */
+            if (USB->abort_xfer) USB->abort_xfer(USB_EP_OUT);
+            usb_out_pending = 0;
+            usb_drain_events();
+            return -1;
+        }
+        usb_out_pending = 1;
+    }
+    return usb_wait(USB_EP_OUT);
 }
 
 static int64_t
 usb_tx(const uint8_t *data, uint64_t len)
 {
-	if (data != usb_tx_buf) {
-		memcpy(usb_tx_buf, data, len);
-	}
-	if (EFI_ERROR(USB->send(USB_EP_IN, len, usb_tx_buf))) {
-		return -1;
-	}
-	return usb_wait(USB_EP_IN);
+    usb_drain_events();
+    if (!usb_connected || len > USB_CHUNK) return -1;
+    if (data != usb_tx_buf) memcpy(usb_tx_buf, data, len);
+    if (EFI_ERROR(USB->send(USB_EP_IN, len, usb_tx_buf))) {
+        if (USB->abort_xfer) USB->abort_xfer(USB_EP_IN);
+        usb_in_pending = 0;
+        usb_drain_events();
+        return -1;
+    }
+    usb_in_pending = 1;
+    return usb_wait(USB_EP_IN);
 }
 
 static void
 fb_reply(const char *code, const char *text)
 {
+    if (code[0] != 'I') screen_log_flush(1);
 	uint32_t n = 0;
 	for (; *code; code++) {
 		usb_tx_buf[n++] = (uint8_t)*code;
@@ -3733,6 +3931,7 @@ fb_reply(const char *code, const char *text)
 static void
 fb_reply_data(uint64_t len)
 {
+    screen_log_flush(1);
 	char msg[13] = "DATA00000000";
 	for (int i = 0; i < 8; i++) {
 		msg[4 + i] = "0123456789abcdef"[(len >> (28 - 4 * i)) & 0xf];
@@ -3758,6 +3957,7 @@ starts_with(const char *s, const char *prefix)
 static int touch_trace_stream;
 #include "trace.inc"
 #include "sm8750_diag.inc"
+#include "op13_wifi_clocks.inc"
 #include "op13_slider_probe.inc"
 #include "tlmm_config_diag.inc"
 #include "spi_config_diagnostics.inc"
@@ -3773,6 +3973,9 @@ fb_command(char *cmd)
 {
 	usb_last_activity = READ_SYSREG(CNTVCT_EL0);
 	int busy = running_live != NULL;
+    screen_quiet = busy;
+    if (!busy && !starts_with(cmd, "getvar:") && !str_eq(cmd, "upload") && !str_eq(cmd, "oem log"))
+        print("uefi command: %s\n", cmd);
  if(touch_runtime_pending && !str_eq(cmd,"oem sm8750-touch-status") &&
     !str_eq(cmd,"oem sm8750-touch-cleanup") && !str_eq(cmd,"oem log") &&
     !str_eq(cmd,"upload") && !str_eq(cmd,"oem stop") &&
@@ -3837,6 +4040,10 @@ fb_command(char *cmd)
   if(busy){fb_reply("FAIL","kernel running");return;}
   int r=op13_slider_probe();
   fb_reply(r?"FAIL":"OKAY","AK09970 sensor probe; use oem log");return;
+ }
+ if(str_eq(cmd,"oem op13-wifi-clocks")){
+  if(busy){fb_reply("FAIL","kernel running");return;}
+  op13_wifi_clocks();fb_reply("OKAY","getter-only PCIe clock query; use oem log");return;
  }
  if(str_eq(cmd,"oem sm8750-display-info")){
   if(busy){fb_reply("FAIL","kernel running");return;}
@@ -3904,6 +4111,8 @@ fb_command(char *cmd)
 			const char *var = cmd + 7;
 			if (str_eq(var, "product")) {
 				fb_reply("OKAY", "xnuloader");
+            } else if (str_eq(var, "usb-session")) {
+                fb_reply("OKAY", usb_session);
 			} else if (str_eq(var, "version")) {
 				fb_reply("OKAY", "0.5");
 			} else if (str_eq(var, "max-download-size")) {
@@ -3913,10 +4122,12 @@ fb_command(char *cmd)
 			} else if (str_eq(var, "screen") && SCREEN.base != 0) {
 				/* width height bytes-per-row */
 				uint32_t mark = log_len;
+                int saved_quiet = screen_quiet; screen_quiet = 1;
 				print("%d %d %d", (uint64_t)SCREEN.width, (uint64_t)SCREEN.height, (uint64_t)SCREEN.stride);
 				log_buf[log_len] = 0;
 				fb_reply("OKAY", log_buf + mark);
 				log_len = mark;
+                screen_quiet = saved_quiet;
 			} else {
 				fb_reply("OKAY", "");
 			}
@@ -3953,6 +4164,8 @@ fb_command(char *cmd)
 				fb_reply("FAIL", "bad size");
 				return;
 			}
+			uint64_t shown_percent = 0;
+            print("upload %s: 0%% (%d MiB)\n", to_ramdisk ? "system" : "payload", (total + 0xfffff) >> 20);
 			fb_reply_data(total);
 			while (got < total) {
 				uint64_t want = total - got > USB_CHUNK ? USB_CHUNK : total - got;
@@ -3962,6 +4175,12 @@ fb_command(char *cmd)
 				}
 				memcpy(dest + got, usb_rx_buf, (size_t)r);
 				got += (uint64_t)r;
+                uint64_t percent = got * 100 / total;
+                if (percent / 5 > shown_percent / 5) {
+                    shown_percent = percent;
+                    print("upload %s: %d%% (%d / %d MiB)\n",
+                        to_ramdisk ? "system" : "payload", percent, got >> 20, (total + 0xfffff) >> 20);
+                }
 			}
 			if (got == total) {
 				if (to_ramdisk) {
@@ -3969,6 +4188,8 @@ fb_command(char *cmd)
 				}
 				fb_reply("OKAY", "");
 			} else {
+                if (!to_ramdisk) ((struct payload_header *)(uintptr_t)PAYLOAD_BASE)->magic = 0;
+                print("upload interrupted: %d / %d bytes; restage required\n", got, total);
 				fb_reply("FAIL", "short download");
 			}
 		} else if (starts_with(cmd, "upload")) {
@@ -4098,6 +4319,7 @@ usb_poll_command(void)
 	}
 	if (!usb_rx_queued && usb_connected && !EFI_ERROR(USB->send(USB_EP_OUT, 511, usb_rx_buf))) {
 		usb_rx_queued = 1;
+        usb_out_pending = 1;
 	}
 	if (USB_IDLE_SECONDS != 0 && running_live == NULL && !touch_diagnostic_retained() &&
             READ_SYSREG(CNTVCT_EL0) - usb_last_activity > (uint64_t)USB_IDLE_SECONDS * READ_SYSREG(CNTFRQ_EL0)) {
@@ -4106,13 +4328,14 @@ usb_poll_command(void)
         }
         USB->handle_event(&msg, &size, &data);
 	if (msg == UsbDeviceEventDeviceStateChange) {
-		usb_connected = (data.device_state == UsbDeviceStateConnected);
-		usb_rx_queued = 0;
+        usb_link_event(data.device_state);
 		return;
 	}
 	if (msg != UsbDeviceEventTransferNotification || data.transfer.endpoint_index != USB_EP_OUT) {
 		return;
 	}
+    if (data.transfer.status == UsbDeviceTransferStatusActive) return;
+    usb_transfer_event(&data);
 	usb_rx_queued = 0;
 	if (data.transfer.status != UsbDeviceTransferStatusCompleteOK || data.transfer.bytes_completed == 0) {
 		return;
@@ -4126,7 +4349,8 @@ usb_poll_command(void)
 static void
 usb_command_loop(void)
 {
-	screen_quiet = 1;
+	screen_quiet = 0;
+    print("UEFI live log enabled; full-screen text flow\n");
 	for (;;) {
 		char cmd[128];
 		int64_t n;
@@ -4291,6 +4515,8 @@ efi_main(efi_handle image, efi_system_table *st)
 			ramfb_phone_screen();
 		print("display %d x %d at %x\n", (uint64_t)SCREEN.width, (uint64_t)SCREEN.height, SCREEN.base);
 	}
+	expand_console();
+	turtle_splash();
 	print("platform %s\n", PLAT->name);
 
 	install_exception_hook();

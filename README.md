@@ -15,6 +15,8 @@ Verified on the connected OnePlus 13 on 25 October 2026:
 - Battery percentage and charging indication work. The user confirmed the charging bolt disappears when unplugged and returns after reconnecting.
 - The final timed battery diagnostic recorded 39 fresh samples and recovered Android by cold reset.
 - The alert slider works: bottom rings, middle is silent, top enables Do Not Disturb. All physical positions were captured, and the user confirmed Silent Mode and Do Not Disturb in the eight-core interactive build.
+- The UEFI loader uses a centered turtle logo, larger live log text and upload progress. Logs flow through the full screen behind the logo. A cached text surface keeps the turtle visible while logs scroll.
+- UEFI USB reconnect works across two physical unplug/replug tests without rebooting; commands, uploads and log downloads recovered in the same loader session.
 
 Adreno 830 hardware acceleration is unfinished. GPU command submission probes are experimental and disabled in the interactive configuration. Smooth 120 FPS operation is not established. Battery health, design capacity and cycle metadata remain unverified and are not published by the new bridge.
 
@@ -24,6 +26,7 @@ Adreno 830 hardware acceleration is unfinished. GPU command submission probes ar
 - `source/hackios-xnu-kernel/`: upstream kernel project and host build support.
 - `source/hackios-xnu-userland/`: injected libraries, UI support, APFS tools and Mesa integration.
 - `source/touch-runtime-v15/`: RAM loader and touch handoff source.
+- `assets/uefi/`: turtle artwork, native boot bitmap and generation prompt.
 - `tools/`: native macOS build, payload packaging and RAM diagnostic tools.
 - `validation/`: selected build and status summaries; device logs and raw dumps are excluded.
 - `diagnostics/20261025-battery/oplus_hal_adsp.[ch]`: pinned vendor ABI reference used by the battery wire tests, retaining its original license notices.
@@ -76,6 +79,15 @@ python3 tools/test-op13-battery-wire.py
 ```
 
 Tests that use device firmware or GPU vendor snapshots require those local inputs as well.
+
+The UEFI transport and display checks run without a phone or system image:
+
+```sh
+python3 tools/test-op13-usb-reconnect.py
+python3 tools/test-op13-turtle-overlay.py
+```
+
+The tests exercise the actual loader code under AddressSanitizer and UndefinedBehaviorSanitizer. The overlay test checks that logs follow a normal full-screen console while the turtle remains visible between characters and scrolls. The transport test covers cancelled transfers, stale receives, failed-send event polling, kernel-side wait timeouts and repeated cable cycles. See the UEFI section of `QUICKSTART.txt` for packaging the current source with your own matching baseline inputs. The `validation/uefi/` summaries identify the phone-tested build; generated boot images remain local.
 
 ## Attribution and licenses
 

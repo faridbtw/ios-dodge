@@ -1,0 +1,24 @@
+{
+  "source": "experimental/uefi-turtle/stable-overlay-v11/dodge-turtle-stable-base.img",
+  "source_sha256": "0c5b07763b2f2ce0032b37bcc7f8bdde8b42b75591d9c2af3ce69ac7153ada24",
+  "image_sha256": "36e6d04439b68a425e94f14a8c7d0648fd89f3b2675609685e03999160226934",
+  "changed_inner_ffs": [
+    "7bb28b99-61bb-11d5-9a5d-0090273fc14d"
+  ],
+  "bitmap": "assets/uefi/turtle-logo-300.bmp",
+  "bitmap_sha256": "66830bed6d73951957f71ce29f6f371fa8ed2c922e5874c26bb1a8069841bb2a",
+  "other_inner_ffs_unchanged": true,
+  "loader_executables_unchanged": true,
+  "bootshim_unchanged": true,
+  "dtb_unchanged": true,
+  "ramdisk_and_signature_bytes_unchanged": true,
+  "compression_roundtrips": "passed",
+  "device_validated": true,
+  "usb_reconnect": true,
+  "usb_transport_unchanged_from_v8": true,
+  "validation": "RAM boot, screenshot, centered white logo pixel checks and repeated full-screen scroll commands passed. Three initial commands took0.038/0.196/0.255s, four repeat commands also completed. Cached text surface and composited dirty updates replace flickering physical hide/show.",
+  "host_validation": "ASAN/UBSAN actual rendering integration: normal full-screen text flow, logo physically visible during every character and scroll, matching underlying text surface, memory guards passed.",
+  "profile": "stable-overlay-v11",
+  "phone_partition_writes": false,
+  "binaries_in_repository": false
+}

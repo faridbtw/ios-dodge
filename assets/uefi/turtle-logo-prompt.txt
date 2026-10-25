@@ -1,0 +1,2 @@
+Created with built-in image_gen.
+Use case: logo-brand. Asset type: UEFI phone boot screen replacement logo. Primary request: a turtle logo. Create one beautifully simple, clean, memorable turtle emblem with rounded geometric silhouette and a few bold shell divisions, readable at a small size. Centered single turtle, generous empty space. Flat solid white mark on a solid pure black background for an OLED boot screen. No text, no lettering, no slogan, no gradients, no shadows, no border, no mockup. Square image.
