@@ -2,8 +2,11 @@ ios-dodge: current working configuration
 =======================================
 
 Device: OnePlus 13 / dodge / SM8750. Android fastboot product: sun.
-Current local payload: experimental/battery/live-original-compositor-v1/payload.bin
-This path describes the working development bundle; its binary is not in Git.
+Current iOS UEFI: experimental/uefi-turtle/stable-overlay-v11/dodge-turtle-stable.img
+Current local payload: experimental/slider/live-original-compositor-v1/payload.bin
+These paths describe the working development bundle; binaries are not in Git.
+The older dodge-known-v31-usb-loader.img is the build baseline, not the
+current interactive turtle UEFI. See the UEFI build section below.
 
 Configuration:
   cpus=8 gl=0 fb_hz=60 op13_batt=4
@@ -24,7 +27,22 @@ Battery status:
 Restore matching local boot inputs first. From Android, the helper performs
 the RAM boot and staging sequence:
 
-python3 tools/boot-op13-play.py --serial YOUR_SERIAL --payload experimental/battery/live-original-compositor-v1/payload.bin --output diagnostics/live-battery-next
+python3 tools/boot-op13-play.py --serial YOUR_SERIAL --payload experimental/slider/live-original-compositor-v1/payload.bin --output diagnostics/ios-next
+
+Manual current iOS boot sequence, after the matched phone enters fastboot:
+
+fastboot -s YOUR_SERIAL boot experimental/uefi-turtle/stable-overlay-v11/dodge-turtle-stable.img
+fastboot -s xnuloader stage experimental/slider/live-original-compositor-v1/payload.bin
+fastboot -s xnuloader oem ramdisk
+fastboot -s xnuloader stage system.apfs
+fastboot -s xnuloader oem op13-slider-probe
+fastboot -s xnuloader oem sm8750-touch-arm
+fastboot -s xnuloader oem run 0
+
+Wait for xnuloader to enumerate after fastboot boot. The helper prefers the
+phone-tested v11 turtle image; the payload manifest's original matching
+sensor-probe-v5 loader remains a verified fallback. The separate local
+Linux/Windows image is not the iOS loader and uses different commands.
 
 Never use fastboot flash or erase. The helper does not write phone partitions.
 The interactive build has no return timer. A physical restart may be needed
