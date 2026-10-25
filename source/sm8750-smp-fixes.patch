@@ -1,0 +1,69 @@
+--- a/osfmk/arm64/gic_v3_irq.c
++++ b/osfmk/arm64/gic_v3_irq.c
+@@ -57,6 +57,7 @@
+ 
+ #define GICR_FRAME_SIZE         0x20000     /* RD_base + SGI_base per CPU */
+ #define GICR_TYPER              0x0008
++#define GICR_TYPER_VLPIS        (1u << 1)
+ #define GICR_TYPER_LAST         (1u << 4)
+ #define GICR_WAKER              0x0014
+ #define GICR_WAKER_PROCSLEEP    (1u << 1)
+@@ -80,6 +81,7 @@
+ 
+ static vm_offset_t gicd_base, gicr_base;
+ static vm_size_t   gicr_size;
++static uint32_t    gicr_stride; /* explicit board stride; zero = architectural discovery */
+ static vm_offset_t gicr_cpu_base[MAX_CPUS]; /* each processor's redistributor frame */
+ 
+ /*
+@@ -399,7 +401,7 @@
+ 	/* GICR_TYPER[63:32] packs Aff3.Aff2.Aff1.Aff0 */
+ 	uint32_t affinity = (uint32_t)(((mpidr >> 32) & 0xff) << 24 | (mpidr & 0xffffff));
+ 
+-	for (vm_offset_t frame = gicr_base; frame + GICR_FRAME_SIZE <= gicr_base + gicr_size; frame += GICR_FRAME_SIZE) {
++	for (vm_offset_t frame = gicr_base; frame + GICR_FRAME_SIZE <= gicr_base + gicr_size;) {
+ 		uint64_t typer = *(volatile uint64_t *)(frame + GICR_TYPER);
+ 
+ 		if ((uint32_t)(typer >> 32) == affinity) {
+@@ -408,6 +410,12 @@
+ 		if (typer & GICR_TYPER_LAST) {
+ 			break;
+ 		}
++		/* GICv4 adds VLPI_base and a reserved page after SGI_base.
++		 * Scanning the reserved frame on SM8750 causes an external abort.
++		 * Match Linux irq-gic-v3.c's redistributor walk.
++		 */
++		frame += gicr_stride ? gicr_stride :
++		    GICR_FRAME_SIZE * ((typer & GICR_TYPER_VLPIS) ? 2 : 1);
+ 	}
+ 	panic("gic: no redistributor for MPIDR 0x%llx", mpidr);
+ }
+@@ -433,6 +441,14 @@
+ 		uint64_t const *reg = prop;
+ 		vm_offset_t soc_base = pe_arm_get_soc_base_phys();
+ 
++		/* SM8750 exposes 256 KiB redistributor frames even when VLPIS is hidden.
++		 * Equivalent to Linux arm,gic-v3 redistributor-stride binding.
++		 */
++		PE_parse_boot_argn("gicr_stride", &gicr_stride, sizeof(gicr_stride));
++		if (gicr_stride && gicr_stride != GICR_FRAME_SIZE &&
++		    gicr_stride != 2 * GICR_FRAME_SIZE) {
++			panic("gic: unsupported redistributor stride %#x", gicr_stride);
++		}
+ 		simple_lock_init(&gic_spi_lock, 0);
+ 		gicd_base = ml_io_map(soc_base + reg[0], reg[1]);
+ 		gicr_base = ml_io_map(soc_base + reg[2], reg[3]);
+--- a/osfmk/arm64/machine_routines.c
++++ b/osfmk/arm64/machine_routines.c
+@@ -1298,7 +1298,10 @@
+ int
+ ml_get_cpu_number(uint32_t phys_id)
+ {
+-	phys_id &= MPIDR_AFF1_MASK | MPIDR_AFF0_MASK;
++	/* SM8750's two fastest cores have Aff2=1 (0x10000/0x10100).
++	 * Dropping Aff2 aliases them onto CPU0/CPU1 and prevents registration.
++	 */
++	phys_id &= MPIDR_AFF2_MASK | MPIDR_AFF1_MASK | MPIDR_AFF0_MASK;
+ 
+ 	for (unsigned i = 0; i < topology_info.num_cpus; i++) {
+ 		if (topology_info.cpus[i].phys_id == phys_id) {

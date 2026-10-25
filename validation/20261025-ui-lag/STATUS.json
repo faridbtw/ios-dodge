@@ -1,0 +1,12 @@
+{
+  "selected_interactive_payload": "experimental/battery/live-original-compositor-v1/payload.bin",
+  "renderer": "original CoreAnimation software, gl=0",
+  "hardware_acceleration": false,
+  "cpu_count": 8,
+  "user_report": "now it faster",
+  "dock_blur_only_fix_sufficient": false,
+  "wallpaper_services": "full combined-fixes set retained",
+  "phone_partition_writes": false,
+  "next_task": "live battery requested by user",
+  "live_battery": "User confirmed visible percentage and charging bolt"
+}

@@ -1,0 +1,152 @@
+ M Makefile
+ M SETUP/config/doconf
+ M bsd/conf/Makefile.arm64
+ M bsd/conf/files
+ M bsd/dev/arm/km.c
+ M bsd/dev/arm/systemcalls.c
+ M bsd/dev/memdev.c
+ M bsd/kern/bsd_init.c
+ M bsd/kern/decmpfs.c
+ M bsd/kern/kern_exec.c
+ M bsd/kern/kern_memorystatus.c
+ M bsd/kern/kern_priv.c
+ M bsd/kern/kern_sig.c
+ M bsd/kern/kpi_socket.c
+ M bsd/kern/makesyscalls.sh
+ M bsd/kern/sys_generic.c
+ M bsd/kern/sys_work_interval.c
+ M bsd/kern/uipc_syscalls.c
+ M bsd/miscfs/bindfs/bind_vfsops.c
+ M bsd/miscfs/mockfs/mockfs.h
+ M bsd/miscfs/mockfs/mockfs_fsnode.c
+ M bsd/nfs/nfs_serv.c
+ M bsd/sys/disk.h
+ M bsd/sys/uio_internal.h
+ M bsd/vfs/vfs_attrlist.c
+ M bsd/vfs/vfs_conf.c
+ M bsd/vfs/vfs_lookup.c
+ M bsd/vfs/vfs_quota.c
+ M bsd/vfs/vfs_subr.c
+ M bsd/vfs/vfs_syscalls.c
+ M bsd/vfs/vfs_vnops.c
+ M bsd/vm/vm_unix.c
+ M config/MASTER
+ M config/MASTER.arm64.bcm2837
+ M iokit/Kernel/IOPMrootDomain.cpp
+ M iokit/Kernel/IOPlatformExpert.cpp
+ M iokit/Kernel/IOService.cpp
+ M iokit/Kernel/IOUserClient.cpp
+ M iokit/KernelConfigTables.cpp
+ M iokit/bsddev/IOKitBSDInit.cpp
+ M iokit/conf/files
+ M libkern/conf/files
+ M libkern/libkern/c++/OSData.h
+ M makedefs/MakeInc.cmd
+ M makedefs/MakeInc.def
+ M makedefs/MakeInc.top
+ M osfmk/arm/arm_init.c
+ M osfmk/arm/model_dep.c
+ M osfmk/arm/pmap/pmap.c
+ M osfmk/arm/pmap/pmap.h
+ M osfmk/arm64/corecrypto/arm64_isa_compatibility.h
+ M osfmk/arm64/cpu.c
+ M osfmk/arm64/machine_routines.c
+ M osfmk/arm64/start.s
+ M osfmk/conf/files
+ M osfmk/conf/files.arm64
+ M osfmk/console/video_console.c
+ M osfmk/kern/debug.c
+ M osfmk/kern/exception.c
+ M osfmk/kern/kalloc.h
+ M osfmk/kern/percpu.h
+ M osfmk/kern/sched.h
+ M osfmk/kern/sched_clutch.c
+ M osfmk/kern/sched_prim.c
+ M osfmk/kern/startup.c
+ M osfmk/kern/thread.c
+ M osfmk/kern/work_interval.c
+ M osfmk/kern/work_interval.h
+ M pexpert/arm/pe_fiq.c
+ M pexpert/arm/pe_kprintf.c
+ M pexpert/pexpert/arm64/BCM2837.h
+ M pexpert/pexpert/arm64/board_config.h
+ M security/mac_vfs_subr.c
+ M tools/lldbmacros/core/syntax_checker.py
+?? bsd/dev/op13_buttons.c
+?? bsd/dev/redwood_adreno.c
+?? bsd/dev/redwood_adsp.c
+?? bsd/dev/redwood_apfs_check.c
+?? bsd/dev/redwood_apple80211.c
+?? bsd/dev/redwood_audio.c
+?? bsd/dev/redwood_battery.c
+?? bsd/dev/redwood_buttons.c
+?? bsd/dev/redwood_camera.c
+?? bsd/dev/redwood_cpufreq.c
+?? bsd/dev/redwood_focaltech_fw.h
+?? bsd/dev/redwood_goodix.c
+?? bsd/dev/redwood_guard.c
+?? bsd/dev/redwood_haptic.c
+?? bsd/dev/redwood_image.c
+?? bsd/dev/redwood_input.c
+?? bsd/dev/redwood_lx.c
+?? bsd/dev/redwood_mic.c
+?? bsd/dev/redwood_net.c
+?? bsd/dev/redwood_op13_buttons.c
+?? bsd/dev/redwood_qmi.c
+?? bsd/dev/redwood_s3910.c
+?? bsd/dev/redwood_s3910_board.c
+?? bsd/dev/redwood_s3910_protocol.c
+?? bsd/dev/redwood_sound.c
+?? bsd/dev/redwood_sparse.c
+?? bsd/dev/redwood_speaker.c
+?? bsd/dev/redwood_sta.c
+?? bsd/dev/redwood_torch.c
+?? bsd/dev/redwood_ufs.c
+?? bsd/dev/redwood_ufshc.c
+?? bsd/dev/redwood_ufshc.h
+?? bsd/dev/redwood_virtio_blk.c
+?? bsd/dev/redwood_virtio_input.c
+?? bsd/dev/redwood_virtio_net.c
+?? bsd/dev/redwood_virtio_sound.c
+?? bsd/dev/redwood_wifi.c
+?? bsd/dev/redwood_wlfw.c
+?? bsd/kern/kern_minimac.c
+?? bsd/miscfs/apfs/
+?? bsd/miscfs/ramfs/
+?? bsd/pthread/pthread_kext_static.c
+?? bsd/sys/op13_buttons.h
+?? bsd/sys/redwood_apfs_check.h
+?? bsd/sys/redwood_audio.h
+?? bsd/sys/redwood_camera.h
+?? bsd/sys/redwood_input.h
+?? bsd/sys/redwood_lx.h
+?? bsd/sys/redwood_net.h
+?? bsd/sys/redwood_qmi.h
+?? bsd/sys/redwood_qrtr.h
+?? bsd/sys/redwood_s3910.h
+?? bsd/sys/redwood_sparse.h
+?? bsd/sys/redwood_sta.h
+?? bsd/sys/redwood_virtio_blk.h
+?? iokit/Kernel/GenericARMPE.cpp
+?? iokit/Kernel/MiniAppleKeyStore.cpp
+?? iokit/Kernel/MiniDrivers.h
+?? iokit/Kernel/MiniIOMobileFramebuffer.cpp
+?? iokit/Kernel/MiniIONetworkStack.cpp
+?? iokit/Kernel/MiniIOSurface.cpp
+?? iokit/Kernel/MiniIOSurface.h
+?? iokit/Kernel/RedwoodBattery.cpp
+?? iokit/Kernel/RedwoodGPU.cpp
+?? iokit/Kernel/RedwoodWLAN.cpp
+?? libkern/amfi/miniamfi.c
+?? libkern/amfi/miniamfi_entitlements.cpp
+?? osfmk/arm64/generic_arm64_support.c
+?? osfmk/arm64/gic_v3_irq.c
+?? osfmk/arm64/kpc.c
+?? osfmk/arm64/loader_return.c
+?? osfmk/arm64/ppl/
+?? osfmk/arm64/psci_smp.c
+?? osfmk/arm64/psci_smp.h
+?? osfmk/arm64/tunables/
+?? osfmk/arm64/user_exception_trace.c
+?? osfmk/minicrypto/
+?? tools/lldbmacros/core/__pycache__/

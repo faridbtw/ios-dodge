@@ -1,0 +1,47 @@
+{
+  "task": "OnePlus13 live battery updates",
+  "live_updates_verified": true,
+  "upstream": {
+    "repository": "https://github.com/hxfuxyy/ios-macan",
+    "commit": "bf6106be492670acd05fac0ee7b7d037a48eafd9",
+    "reused": "ADSP firmware, shared memory and GLINK transport; adapted OnePlus13 hardware addresses and vendor PMIC ABI"
+  },
+  "phone_validation": {
+    "shared_memory_survey": "passed",
+    "firmware_metadata_and_segments": "passed",
+    "first_firmware_start": "hung during RPMh setup before any live sample",
+    "android_recovered_automatically": false,
+    "corrected_firmware_start": "passed: PAS authentication, SMP2P ready/handover, PMIC GLINK opened",
+    "live_samples_captured": 18,
+    "repeated_live_updates": "passed",
+    "charger_detection": "passed after startup; online1, OPlus USB_IN_STATUS1, status charging1",
+    "corrected_test_android_recovered_automatically": true
+  },
+  "correction": {
+    "skip_unverified_rpmh_votes": true,
+    "reject_zero_rsc_address_before_mmio": true,
+    "native_kernel_build": "passed",
+    "next_payload": "experimental/battery/live-start-v2/payload.bin",
+    "next_payload_phone_tested": true
+  },
+  "blocked_on": null,
+  "phone_partition_writes": false,
+  "live_update_plan": "Start actual ADSP firmware, open PMIC GLINK, validate repeated GET responses, publish IOPMPowerSource, then validate UI",
+  "gpu_work_paused": true,
+  "next_steps": [],
+  "host_change_after_v2": "Faster 1s startup sampling for first 11 rounds, then normal 10s polling; native build passed, not phone tested",
+  "phone_current_state": "Interactive iOS RAM boot, no automatic return timer",
+  "charger_samples_verified": true,
+  "ui_display_verified": true,
+  "live_probe_result": "diagnostics/20261025-battery/oem-read-v1/RESULT.json",
+  "sleeping_poller_test": {
+    "passed": true,
+    "sample_count": 39,
+    "reset_recovered_android": true,
+    "evidence": "diagnostics/20261025-battery/sleeping-poll-test-v1/RESULT.json"
+  },
+  "interactive_payload": "experimental/battery/live-original-compositor-v1/payload.bin",
+  "interactive_validation": "User selected option1: battery percentage and charging bolt visible in combined eight-core original-compositor build",
+  "cable_transition_validation": "Passed: user selected option1, charging bolt disappears when unplugged and returns after reconnecting",
+  "task_status": "Battery percentage, charging display and live cable transitions verified; faster original compositor retained"
+}

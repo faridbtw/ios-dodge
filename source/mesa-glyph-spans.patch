@@ -1,0 +1,43 @@
+--- a/userland/src/eagl.c
++++ b/userland/src/eagl.c
+@@ -2827,7 +2827,7 @@
+ }
+ 
+ static bool
+-plain_draw_begin(struct eagl *e, GLint enabled[4])
++plain_draw_begin(struct eagl *e, GLint enabled[4], bool glyph_spans)
+ {
+ 	static const GLfloat identity[16] = { 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1 };
+ 	static uint8_t said[90];
+@@ -2867,7 +2867,12 @@
+ 	 * its own memory -- nothing -- and wrote that over everything: every launch image SpringBoard
+ 	 * keeps came out black, and with it the zoom that opens an application the first time.
+ 	 */
+-	if (!plain_draws || (plain_draws == 1 && e->bound[0] == 0) || reads_what_it_writes(e) ||
++	/* CoreAnimation also fills glyphs with untextured GL_LINES and program 0.
++	 * ES has no fixed-function program: skipping these spans loses icon labels.
++	 * Keep the exception limited to lines; untextured full-screen triangles
++	 * must still be skipped (they otherwise paint the entire surface white).
++	 */
++	if (!plain_draws || (plain_draws == 1 && e->bound[0] == 0 && !glyph_spans) || reads_what_it_writes(e) ||
+ 	    (e->colour != 0 && e->colour == e->bound[0])) {
+ 		census_draw(e, function, CENSUS_NOT_DRAWN);
+ 		return false;
+@@ -3119,7 +3124,7 @@
+ 		glDrawArrays(mode, first, count);
+ 		group_draw_end(e, enabled);
+ 	} else {
+-		plain = plain_draw_begin(e, enabled);
++		plain = plain_draw_begin(e, enabled, mode == GL_LINES);
+ 		glDrawArrays(mode, first, count);
+ 		if (plain) {
+ 			plain_draw_end(e, enabled);
+@@ -3159,7 +3164,7 @@
+ 		glDrawElements(mode, count, type, indices);
+ 		group_draw_end(e, enabled);
+ 	} else {
+-		plain = plain_draw_begin(e, enabled);
++		plain = plain_draw_begin(e, enabled, mode == GL_LINES);
+ 		glDrawElements(mode, count, type, indices);
+ 		if (plain) {
+ 			plain_draw_end(e, enabled);

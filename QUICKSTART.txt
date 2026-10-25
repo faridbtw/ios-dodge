@@ -1,0 +1,33 @@
+ios-dodge: current working configuration
+=======================================
+
+Device: OnePlus 13 / dodge / SM8750. Android fastboot product: sun.
+Current local payload: experimental/battery/live-original-compositor-v1/payload.bin
+This path describes the working development bundle; its binary is not in Git.
+
+Configuration:
+  cpus=8 gl=0 fb_hz=60 op13_batt=4
+  gpu=0 adreno=0 metal=0 adsp=0
+  ufs=0 ufs_write=0 var_store=0 cpufreq=0
+  loader_return_after=0
+  Full wallpaper services retained; CPU/GL benchmarks omitted.
+
+The original compositor was selected after the user reported severe lag with
+Mesa softpipe. Removing the dock background alone was insufficient.
+
+Battery status:
+  39 fresh samples verified with the sleeping poller in a timed diagnostic.
+  User confirmed percentage and charging bolt in the eight-core UI.
+  User confirmed unplug/reconnect changes the charging bolt correctly.
+  No claim is made for battery-health/cycle metadata or GPU acceleration.
+
+Restore matching local boot inputs first. From Android, the helper performs
+the RAM boot and staging sequence:
+
+python3 tools/boot-op13-play.py --serial YOUR_SERIAL --payload experimental/battery/live-original-compositor-v1/payload.bin --output diagnostics/live-battery-next
+
+Never use fastboot flash or erase. The helper does not write phone partitions.
+The interactive build has no return timer. A physical restart may be needed
+to leave iOS, as USB logging is unavailable while all eight cores run XNU.
+
+See README.md for the source layout and omitted build inputs.
