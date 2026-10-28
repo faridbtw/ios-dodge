@@ -16,7 +16,7 @@
 
 ---
 
-An experimental iOS port for **OnePlus 13 (`dodge`, SM8750)**, with Adreno graphics, a custom turtle UEFI and native hardware adaptations. This private repository contains the source, build tools and sanitized results from testing on the phone.
+An experimental iOS port for **OnePlus 13 (`dodge`, SM8750)**, with Adreno graphics, a custom UEFI and native hardware adaptations. This private repository contains the source, build tools and sanitized results from testing on the phone.
 
 > **RAM only.** Use `fastboot boot` and temporary staging. Never flash or erase phone partitions. System images, firmware, SDKs, device calibration and raw logs stay local.
 
@@ -101,7 +101,7 @@ Cold-reset before another GPU session. The GPU retains protected memory; do not 
 | Directory | Contents |
 | :--- | :--- |
 | [Kernel](source/xnu-build-snapshot/xnu-8796.121.2/) | XNU, Adreno service, battery, slider, flashlight and display adaptations. |
-| [UEFI](source/touch-runtime-v15/) | Turtle console, USB reconnect, live reset and panel brightness preparation. |
+| [UEFI](source/touch-runtime-v15/) | Console, USB reconnect, live reset and panel brightness preparation. |
 | [Userland](source/hackios-xnu-userland/) | Injected UI libraries and the GLES / OSMesa bridge. |
 | [Mesa](source/mesa26-op13/) | Consolidated Mesa 26.2.5 patch and changed-file hash manifest. |
 | [Brightness](source/screen-brightness/) | Screen agent, scoped Control Center hook, DSI tests and feature build guide. |
