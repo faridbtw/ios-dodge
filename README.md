@@ -170,9 +170,3 @@ Built on **HackiOS / OOSEX GANG**, **Apple XNU**, **Project-Silicium**, **Mesa /
 - Slider and Focus behavior: [haxi0's OnePlus 8 kernel](https://github.com/haxi0/iphont-xnu-kernel/tree/instantnoodle) and [userland](https://github.com/haxi0/iphont-xnu-userland), adapted to Dodge's AK09970 hardware.
 
 Original notices and third-party licenses retain their scope. See [LICENSE](LICENSE) and [SOURCE-PROVENANCE.md](SOURCE-PROVENANCE.md) for attribution and integration boundaries.
-
----
-
-<p align="center">
-  <sub>ios-dodge · OnePlus 13 · Source, tooling and experiments</sub>
-</p>
