@@ -22,9 +22,10 @@ def main():
     p = argparse.ArgumentParser(description=__doc__)
     p.add_argument('--payload', required=True, type=Path)
     p.add_argument('--serial')
+    p.add_argument('--system', type=Path, help='Explicit local system RAM image matching BUILD.json')
     p.add_argument('--output', type=Path)
     p.add_argument('--check', action='store_true')
-    p.add_argument('--loader', type=Path, help='Use the pinned v12 live cold-reset UEFI')
+    p.add_argument('--loader', type=Path, help='Use a pinned iOS turtle UEFI')
     a = p.parse_args()
     payload = a.payload.resolve()
     meta = json.loads((payload.parent / 'BUILD.json').read_text())
@@ -48,13 +49,19 @@ def main():
             '36e6d04439b68a425e94f14a8c7d0648fd89f3b2675609685e03999160226934',
         ROOT / 'experimental/uefi-turtle/live-reset-v12/dodge-ios-uefi.img':
             '40861c9e4258b30902fc806caad83a09d104001e3587434aabeb046d466c913b',
+        ROOT / 'experimental/uefi-turtle/screen-brightness-v13/dodge-ios-uefi.img':
+            '5bafc800875bedf74c312910af396726451f493ed0f4e14d113ef0e1b8c651a0',
     }
     assert loader in pinned_loaders and digest(loader) == meta['loader_sha256'] == pinned_loaders[loader]
     if a.loader:
         loader = a.loader.resolve()
-        assert loader == ROOT / 'experimental/uefi-turtle/live-reset-v12/dodge-ios-uefi.img'
+        assert loader in pinned_loaders
         assert digest(loader) == pinned_loaders[loader]
-    if loader == ROOT / 'experimental/uefi-turtle/live-reset-v12/dodge-ios-uefi.img':
+    screen_bridge = meta.get('screen_brightness_requested', False)
+    if screen_bridge:
+        assert loader == ROOT / 'experimental/uefi-turtle/screen-brightness-v13/dodge-ios-uefi.img'
+    if loader in (ROOT / 'experimental/uefi-turtle/live-reset-v12/dodge-ios-uefi.img',
+                  ROOT / 'experimental/uefi-turtle/screen-brightness-v13/dodge-ios-uefi.img'):
         final = json.loads(loader.with_suffix('.json').read_text())
         base = ROOT / final['source']
         first = json.loads(base.with_suffix('.json').read_text())
@@ -66,7 +73,7 @@ def main():
         assert all(first[k] and final[k] for k in ('bootshim_unchanged', 'dtb_unchanged',
                                                   'ramdisk_and_signature_bytes_unchanged'))
         assert first['other_ffs_unchanged'] and final['other_inner_ffs_unchanged']
-    system = ROOT / 'system.apfs'
+    system = a.system.resolve() if a.system else ROOT / 'system.apfs'
     assert digest(system) == meta['system_sha256']
     if a.check:
         print(json.dumps(dict(package_verified=True, system_verified=True, device_contacted=False,
@@ -94,7 +101,8 @@ def main():
     def fb(words, serial='xnuloader', timeout=15):
         assert words[0] in ('devices', 'getvar', 'get_staged', 'boot', 'stage', 'oem')
         if words[0] == 'oem':
-            assert words[1:] in (['ramdisk'], ['op13-slider-probe'], ['sm8750-touch-arm'], ['run', '0'], ['log'])
+            assert words[1:] in (['ramdisk'], ['op13-slider-probe'], ['sm8750-touch-arm'], ['run', '0'], ['log']) or (
+                screen_bridge and words[1:] == ['op13-dsi-brightness', 'ahb'])
         return run(['fastboot', '-s', serial, *words], timeout)
 
     def wait_device(serial):
@@ -117,16 +125,24 @@ def main():
         fb(['boot', loader], a.serial, 50)
         wait_device('xnuloader')
         assert 'product: xnuloader' in fb(['getvar', 'product'])
+        if screen_bridge:
+            fb(['oem', 'op13-dsi-brightness', 'ahb'])
+            fb(['oem', 'log'])
+            fb(['get_staged', out / 'screen-preflight.log'])
+            preflight = (out / 'screen-preflight.log').read_bytes().replace(b'\0', b'').decode(errors='replace')
+            assert 'config-AHB vote=0 on-status=0 on=1' in preflight
+            assert 'version=20090000 CTRL=1f5' in preflight
         fb(['stage', payload], timeout=60)
         fb(['oem', 'ramdisk'])
-        print('Uploading system.apfs into RAM', flush=True)
+        print('Uploading ' + system.name + ' into RAM', flush=True)
         fb(['stage', system], timeout=180)
         fb(['oem', 'op13-slider-probe'])
         fb(['oem', 'sm8750-touch-arm'], timeout=30)
         fb(['oem', 'run', '0'], timeout=30)
         result = dict(ram_boot_started=True, phone_partition_writes=False, automatic_return_seconds=0,
                       hardware_acceleration_verified=False, payload_sha256=meta['payload_sha256'],
-                      loader=str(loader.relative_to(ROOT)), loader_sha256=digest(loader))
+                      loader=str(loader.relative_to(ROOT)), loader_sha256=digest(loader),
+                      system=str(system), system_sha256=digest(system))
         (out / 'RESULT.json').write_text(json.dumps(result, indent=2) + '\n')
         print('GLES iOS started; collecting live logs', flush=True)
         for index in range(3):

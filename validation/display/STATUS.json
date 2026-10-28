@@ -25,5 +25,9 @@
   "sampled_commit_count": 13,
   "sustained_stability_verified": false,
   "application_fps_measured": false,
-  "raw_logs_in_repository": false
+  "raw_logs_in_repository": false,
+  "validation_scope": "Earlier general scrolling test; residual minor app-dismiss tearing remains",
+  "occasional_app_switcher_tearing": true,
+  "experimental_preemption_candidate_selected": false,
+  "user_deprioritized_remaining_tearing": true
 }

@@ -1,0 +1,10 @@
+{
+  "user_confirmed_power": true,
+  "user_confirmed_volume_up": true,
+  "user_confirmed_volume_down": true,
+  "current_build": "experimental/screen-brightness/control-v2/payload.bin",
+  "experimental_tearing_candidate_excluded": true,
+  "cause_of_candidate_button_failure_proven": false,
+  "phone_partition_writes": false,
+  "raw_logs_in_repository": false
+}

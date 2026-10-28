@@ -1,0 +1,23 @@
+{
+  "kernel_native_build": "passed with local-only SDK/dependencies",
+  "kernel_sha256": "8fcd1936f6d286937128f45d5193d125ff2b27af9fcd54753009278f12de5b46",
+  "uefi_native_build": "passed with LLVM19",
+  "brightness_userland_native_compile": "passed; agent and scoped Control Center wrapper",
+  "ram_root_round_trip_regular_files": 540,
+  "dsi_packet_sanitizers": "passed; bounds, packet, W1C retention, restoration, busy/error/timeout",
+  "display_commit_sanitizer_cases": 1187,
+  "live_reset_sanitizer_cases": 192,
+  "usb_reconnect_regressions": "passed",
+  "turtle_overlay_regressions": "passed",
+  "slider_regressions": "passed",
+  "battery_wire_regressions": "passed",
+  "phone_partitions_written": false,
+  "phone_contacted_for_publish": false,
+  "experimental_display_guard_in_repository_kernel": false,
+  "phone_test_artifact_bit_identity_with_repository_build": false,
+  "system_images_in_repository": false,
+  "firmware_in_repository": false,
+  "raw_logs_in_repository": false,
+  "gles_bridge_native_compile": "passed against paired local Mesa binary and SDK",
+  "repository_kernel_payload_packaging": "passed; all540 regular RAM-root files verified"
+}

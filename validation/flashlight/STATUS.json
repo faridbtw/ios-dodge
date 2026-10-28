@@ -1,0 +1,12 @@
+{
+  "user_confirmed_on_off": true,
+  "user_confirmed_levels": true,
+  "channels": 4,
+  "requested_ma_per_channel": 32,
+  "effective_ma_per_channel": 30,
+  "automatic_cutoff_seconds": 30,
+  "phone_partition_writes": false,
+  "raw_logs_in_repository": false,
+  "payload_sha256": "943d3b29857d12cdd44103b0ea1ffc57733f3f0399b1a37a456ce6f9f98275f7",
+  "current_payload_sha256": "175dfc60e6673fd1c5a5b636b1d5e60b2db263e9e0af3c8424830fd5df2785aa"
+}

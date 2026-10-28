@@ -1,20 +1,23 @@
 {
-  "updated": "2026-10-28",
+  "updated": "2026-10-29",
   "project": "ios-dodge",
   "device": "OnePlus 13 / SM8750 / dodge",
   "ram_only": true,
   "phone_partition_writes": false,
   "selected_build": {
-    "uefi": "experimental/uefi-turtle/live-reset-v12/dodge-ios-uefi.img",
-    "uefi_sha256": "40861c9e4258b30902fc806caad83a09d104001e3587434aabeb046d466c913b",
-    "payload": "experimental/display/anti-tear-v1/payload.bin",
-    "payload_sha256": "ff260d0b8ad877c9cbee0d4d9709132a6cd17e8b1fe8f394533811e67bc9991c",
+    "uefi": "experimental/uefi-turtle/screen-brightness-v13/dodge-ios-uefi.img",
+    "uefi_sha256": "5bafc800875bedf74c312910af396726451f493ed0f4e14d113ef0e1b8c651a0",
+    "payload": "experimental/screen-brightness/control-v2/payload.bin",
+    "payload_sha256": "175dfc60e6673fd1c5a5b636b1d5e60b2db263e9e0af3c8424830fd5df2785aa",
     "renderer": "Adreno 830 / Mesa 26.2.5 / GLES 3.2",
     "ios_cores": 7,
     "firmware_usb_cpu": 0,
     "metal_enabled": false,
     "artifacts_in_repository": false,
-    "framebuffer_advertised_hz": 60
+    "framebuffer_advertised_hz": 60,
+    "system_image": "experimental/sileo/v1/system-sileo.apfs",
+    "system_sha256": "ece8098938ebbc265c8c782bf705cf2f74747deea002ec3a5548cb4307909ed3",
+    "kernel_sha256": "20ab2146d41ac3d66256155e18bf860e644d8151057b57ba2c2fbf52f27ecb02"
   },
   "verified": [
     "iOS boot and touch",
@@ -25,14 +28,19 @@
     "alert slider ring/silent/Do Not Disturb",
     "seven-core firmware USB diagnostics",
     "live USB cold reboot to Android",
-    "centered turtle and larger console logs"
+    "centered turtle and larger console logs",
+    "Sileo2.5.1 installed and user-confirmed opens; writable Procursus bootstrap initialized",
+    "Control Center flashlight on/off and brightness levels, user-confirmed; native four-channel PM8550 driver",
+    "Screen brightness in Settings and Control Center; user-confirmed native panel dim/bright",
+    "Power and both volume buttons user-confirmed after restoring saved brightness build"
   ],
   "open_issue_ids": [
     "WIFI-01",
     "AUDIO-01",
     "WALLPAPER-02",
     "GPU-02",
-    "USB-02"
+    "USB-02",
+    "DISPLAY-03"
   ],
   "unverified_issue_ids": [
     "PERF-01",
@@ -44,9 +52,9 @@
   "application_120fps_verified": false,
   "sustained_stability_verified": false,
   "last_requested_phone_handoff": {
-    "os": "Android",
+    "os": "iOS saved brightness build",
     "startup_confirmed": true,
-    "note": "Latest user-requested reboot completed; this records the handoff, not continuous device monitoring."
+    "note": "Restored screen-brightness/control-v2; user confirmed Power and both volume buttons work again. Tearing work remains paused."
   },
   "evidence": [
     "validation/gpu-gles/STATUS.json",
@@ -54,7 +62,8 @@
     "validation/wallpaper/STATUS.json",
     "validation/live-usb/STATUS.json",
     "validation/uefi/live-reset/STATUS.json",
-    "validation/20261028-source-checks.json"
+    "validation/20261028-source-checks.json",
+    "validation/screen-brightness/STATUS.json"
   ],
   "display_observations": {
     "panel_te_period_us": 8290,
@@ -63,6 +72,43 @@
     "saved_commit_samples": 13,
     "te_timeouts_reported": 0,
     "user_confirmed_horizontal_tearing_gone": true,
-    "application_fps_measured": false
+    "application_fps_measured": false,
+    "user_reported_app_switcher_horizontal_tearing": true,
+    "switcher_test_payload": "experimental/display/anti-tear-v2/payload.bin",
+    "switcher_work": "paused at user request",
+    "switcher_fix_user_confirmed": false,
+    "switcher_candidate_button_regression": true,
+    "stable_build_buttons_user_confirmed": true,
+    "residual_tearing_severity": "minor; user says almost gone and not a priority"
+  },
+  "sileo": {
+    "version": "2.5.1",
+    "user_confirmed_opens": true,
+    "bootstrap_in_ram": true,
+    "ellekit": "0.4.5",
+    "network_package_downloads_verified": false,
+    "arbitrary_tweaks_verified": false
+  },
+  "fps_work": "stopped at user request",
+  "flashlight": {
+    "user_confirmed_on_off": true,
+    "channels": 4,
+    "effective_max_ma_per_channel": 30,
+    "automatic_cutoff_seconds": 30,
+    "worker_sleeps": true,
+    "source": "source/xnu-build-snapshot/xnu-8796.121.2/bsd/dev/redwood_torch.c",
+    "payload": "experimental/screen-brightness/control-v2/payload.bin",
+    "user_confirmed_brightness_levels": true
+  },
+  "screen_brightness": {
+    "user_confirmed_settings": true,
+    "user_confirmed_control_center": true,
+    "native_dcs51": true,
+    "normal_max_dbv": 3515,
+    "minimum_dbv": 8,
+    "config_ahb_vote": true,
+    "framebuffer_dimming": false,
+    "source": "source/xnu-build-snapshot/xnu-8796.121.2/bsd/dev/op13_screen.c",
+    "validation": "validation/screen-brightness/STATUS.json"
   }
 }

@@ -663,3 +663,5 @@ bsd/dev/adreno8_zap.c	standard
 bsd/dev/annibale_cpufreq.c	standard
 bsd/dev/k90_oneplus_gpu.c	standard
 bsd/dev/redwood_gpu_dispatch.c	standard
+
+bsd/dev/op13_screen.c		standard

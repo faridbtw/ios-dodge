@@ -3954,6 +3954,8 @@ starts_with(const char *s, const char *prefix)
  * One command from the host. While a kernel runs on another core (running_live) only what does
  * not disturb it: questions, the screen, the log so far, and "oem stop".
  */
+#include "op13_brightness_probe.inc"
+#include "op13_dsi_probe.inc"
 static int touch_trace_stream;
 #include "trace.inc"
 #include "sm8750_diag.inc"
@@ -4211,7 +4213,11 @@ fb_command(char *cmd)
 				sent += chunk;
 			}
 			fb_reply("OKAY", "");
-		} else if (starts_with(cmd, "oem screenshot")) {
+		} else if (starts_with(cmd, "oem op13-dsi-brightness")) {
+ op13_dsi_probe(cmd+sizeof("oem op13-dsi-brightness")-1);
+ } else if (starts_with(cmd, "oem op13-screen-brightness")) {
+ op13_brightness_probe(cmd+sizeof("oem op13-screen-brightness")-1);
+ } else if (starts_with(cmd, "oem screenshot")) {
 			/* stage the raw framebuffer; "getvar screen" gives its geometry */
 			if (SCREEN.base == 0) {
 				fb_reply("FAIL", "no display");

@@ -1,10 +1,12 @@
 ios-dodge — OnePlus 13 iOS bug list
-Updated: 2026-10-28
+Updated: 2026-10-29
 
 SELECTED BUILD
 
-UEFI: experimental/uefi-turtle/live-reset-v12/dodge-ios-uefi.img
-Payload: experimental/display/anti-tear-v1/payload.bin
+UEFI: experimental/uefi-turtle/screen-brightness-v13/dodge-ios-uefi.img
+Payload: experimental/screen-brightness/control-v2/payload.bin
+System RAM image: experimental/sileo/v1/system-sileo.apfs
+Original non-Sileo fallback: experimental/display/anti-tear-v1/payload.bin
 Renderer: Adreno 830 / Mesa 26.2.5 / OpenGL ES 3.2; Metal disabled.
 CPU layout: seven iOS cores, with physical CPU0 retained for firmware USB.
 The eight-core software-renderer build remains a fallback.
@@ -12,11 +14,24 @@ These are local artifacts; the GitHub repository contains source and summaries.
 
 REMAINING BUGS / INCOMPLETE FEATURES
 
+DISPLAY-03 — Occasional app-switcher tearing
+Status: MINOR, OPEN; further work paused at the user’s request.
+User reports a small horizontal split when swiping away
+apps. General scrolling was previously confirmed tear-free. A guarded final
+copy candidate is saved; app-dismiss animation fix is not yet verified.
+User later reported power/volume failure in that candidate. Restoring the
+selected brightness build recovered all buttons (user confirmed). The
+experimental candidate remains unselected; cause is not yet established.
+
 WIFI-01 — Wi-Fi unavailable
 Status: OPEN.
-Local diagnostics verified PCIe detection and firmware-transfer/DMA progress,
-but WLAN firmware still enters crash/recovery during bring-up. No working
-scan, association, IP address or network traffic has been established.
+RAM-only diagnostics now start WLAN firmware and both IPCR channels, exchange
+QRTR messages and discover the WLFW service. Repeated runtime polls stay healthy.
+QMI initialization, owned runtime-memory setup and regulatory/board/PHY/AUX
+file transfers are accepted. Final FW_INIT_DONE remains absent, and the Peach
+radio/scan driver is unfinished. No scan, association, IP address or traffic.
+Stock Linux CNSS comparisons also corrected firmware search order and added
+the native PMU power-setting step. These experiments remain outside iOS.
 Complete when: scan, connect, transfer data and reconnect work on the phone.
 
 AUDIO-01 — Speaker sound
@@ -55,6 +70,27 @@ Application frame-time measurements, sustained load and thermal/power behavior
 still need validation. The user previously deprioritized 120 FPS.
 
 RESOLVED / VERIFIED IN THE SELECTED BUILD
+
+BRIGHTNESS-01 — Screen brightness
+User confirmed Settings and Control Center sliders visibly dim/brighten the
+panel. Native normal-range DCS51 commands use a root-only kernel interface
+and a system brightness helper. A scoped Control Center capability check
+enables its slider. No framebuffer dimming or GPU/rendering changes.
+Automatic ambient-light brightness remains unverified.
+Evidence: validation/screen-brightness/STATUS.json.
+
+FLASHLIGHT-01 — Control Center flashlight
+User confirmed visible on/off operation and brightness levels. Native PM8550/SPMI v7 support uses
+all four channels with the current observed in stock Android. Brightness is
+limited to the tested 30 mA per channel; automatic shutoff after 30 seconds is
+retained in this initial version. Longer operation remains unverified.
+Evidence: validation/flashlight/STATUS.json.
+
+SILEO-01 — Rootless package manager
+Sileo2.5.1 is installed and the user confirmed it appears and opens. The
+writable Procursus prefix initializes in RAM; dpkg reports Sileo and ElleKit.
+Online package downloads remain dependent on unfinished Wi-Fi. Arbitrary
+tweaks are unverified, and installed packages reset after a cold reboot.
 
 GPU-01 — Hardware GLES rendering
 CoreAnimation reports OpenGL ES 3.2 / Mesa 26.2.5 / Adreno 830. GPU context and

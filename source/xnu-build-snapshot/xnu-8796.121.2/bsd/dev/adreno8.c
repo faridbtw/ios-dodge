@@ -86,7 +86,7 @@
 #include "adreno8_gpu_private.h"
 #include "adreno8_zap_private.h"
 
-uint32_t adreno8_skip_steps, adreno8_pause_ms = 2200, adreno8_fine, adreno8_watch_seconds = 20;
+uint32_t adreno8_skip_steps, adreno8_pause_ms = 0, adreno8_fine, adreno8_watch_seconds = 20;
 
 uint32_t adreno8_speed_asked;                  /* adreno8_speed: the speed once drawing, 1 the slowest (adreno8_speed_tick) */
 

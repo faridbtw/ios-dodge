@@ -1,0 +1,13 @@
+{
+  "profile": "screen-brightness-v13",
+  "image_sha256": "5bafc800875bedf74c312910af396726451f493ed0f4e14d113ef0e1b8c651a0",
+  "source": "source/touch-runtime-v15",
+  "config_clock": "disp_cc_mdss_ahb_clk",
+  "clock_frequency_hz": 19200000,
+  "only_configuration_clock_voted": true,
+  "pixel_clock_changed": false,
+  "panel_mode_changed": false,
+  "user_confirmed_native_dimming": true,
+  "prior_v12_live_reset_and_usb_retained": true,
+  "binary_in_repository": false
+}

@@ -5,11 +5,15 @@ Experimental iOS16.5 /20F66 RAM port for **OnePlus13 (`dodge`, SM8750)**. This p
 ## Current phone-tested fixes
 
 - Adreno830 hardware OpenGL ES3.2 rendering through Mesa26.2.5/Freedreno. Metal remains disabled.
-- Horizontal screen tearing resolved in user testing: compose into off-screen RAM, then copy the complete frame after the panel TE signal. Sampled copies took1.1–2.9ms within the observed8.29ms panel refresh period. This does not establish120FPS application rendering.
+- General scrolling is mostly tear-free: compose into off-screen RAM, then copy the complete frame after the panel TE signal. A small horizontal split can still occur when dismissing apps; the user considers it minor. Sampled copies took1.1–2.9ms within the observed8.29ms panel refresh period. This does not establish120FPS application rendering.
 - Wallpaper selection works through Settings. Native catalog services are enabled on demand; a scoped CoreGraphics preview replaces a Metal-only capture that crashed PosterBoard. Lock-screen long-press selection remains disabled because its hosted scene renders black.
 - Live battery percentage/charging updates and bottom ring / middle silent / top Do Not Disturb slider behavior are retained.
 - Seven iOS cores run while CPU0 serves firmware USB diagnostics. The earlier eight-core software-renderer profile remains a fallback.
-- Centered turtle, larger full-screen logs and USB reconnect code are retained. The v12 UEFI now accepts `fastboot -s xnuloader reboot` while iOS owns touch; Android startup completed in22.7seconds during testing.
+- Centered turtle, larger full-screen logs and USB reconnect code are retained. The v13 UEFI retains v12 support and accepts `fastboot -s xnuloader reboot` while iOS owns touch; Android startup completed in22.7seconds during testing.
+- Screen brightness works in Settings and Control Center through native DCS51 panel commands. The scoped Control Center availability hook enables its slider.
+- Flashlight on/off and brightness levels work through the native four-channel PM8550 driver, with a30-second activation cutoff.
+- Sileo2.5.1 opens with a RAM-backed Procursus/ElleKit bootstrap. Package downloads and arbitrary tweaks remain unverified.
+- Power and both volume buttons were user-confirmed after restoring the saved brightness build; the experimental tearing candidate remains unselected.
 
 Wi-Fi and sound remain unfinished; sound work is paused. Long-term stability, full sensor/camera/radio support and120FPS need further validation. See [BUGLIST.txt](BUGLIST.txt) for remaining issues and [STATUS.json](STATUS.json) for the current build and validation summary.
 
@@ -20,6 +24,7 @@ Wi-Fi and sound remain unfinished; sound work is paused. Long-term stability, fu
 - `source/hackios-xnu-userland/`: injected UI libraries, matching GLES/OSMesa bridge and historical Mesa integration sources.
 - `source/mesa26-op13/`: consolidated source patch and changed-file hash manifest for the paired Mesa26.2.5 runtime.
 - `source/wallpaper-preview/`: scoped preview helper and its build instructions.
+- `source/screen-brightness/`: brightness agent, scoped Control Center hook, native DSI tests and feature rebuild instructions.
 - `tools/`: host build, packaging, RAM boot and regression checks.
 - `validation/`: sanitized feature results and artifact identities. Raw logs and device calibration are excluded.
 
@@ -47,13 +52,14 @@ python3 tools/build-op13-gles-bridge.py --mesa YOUR_BUILT_OSMESA_DYLIB --sdk YOU
 
 Use the consolidated patch once; do not then reapply the historical Mesa patches. The source patch reconstructs all59 changed/new donor text source files. Native kernel and GLES bridge compilation were checked separately from the earlier phone-tested artifacts; bit-for-bit reproduction of historical binaries is not claimed.
 
-[QUICKSTART.txt](QUICKSTART.txt) identifies the selected local display/wallpaper payload and v12 UEFI, RAM boot commands and software-renderer fallback. Packaging helpers require the omitted local templates/artifacts; `experimental/` paths are local work outputs. `system.apfs`, boot images, firmware, SDKs, calibration and raw logs are never uploaded.
+[QUICKSTART.txt](QUICKSTART.txt) identifies the selected local Sileo/flashlight/brightness payload and v13 UEFI, RAM boot commands and software-renderer fallback. [Feature rebuild instructions](source/screen-brightness/README.txt) describe preparing the separate Sileo system image and adding the native brightness helpers. Packaging helpers require the omitted local templates/artifacts; `experimental/` paths are local work outputs. `system.apfs`, boot images, firmware, SDKs, calibration and raw logs are never uploaded.
 
 **RAM only: use `fastboot boot` and temporary staging. Never flash or erase phone partitions.** The GPU retains protected memory until cold reset; do not reuse its loader session through `oem stop`.
 
 ## Checks
 
 ```sh
+python3 tools/test-op13-dsi-brightness.py
 python3 tools/test-op13-display-commit.py
 python3 tools/test-op13-live-reset.py
 python3 tools/test-op13-usb-reconnect.py

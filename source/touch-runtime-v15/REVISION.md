@@ -1,15 +1,5 @@
-v15: same loader GPIO path as v14; USB idle auto-reboot disabled. New XNU protocol supports bounded24..32-byte identify (OP13 observed28).
+Current: v13 screen-brightness UEFI, retaining v12 live cold reboot, centered turtle, larger console, USB reconnect and touch lease guards.
 
+Added native DCS51 diagnostic and explicit display configuration-AHB vote before XNU starts. Pixel/byte/PHY rates and panel mode are unchanged. Commands remain blocked while iOS owns touch. Protocol-only brightness lookup is retained for diagnosis; the phone has no installed DisplayPwrCtrl server.
 
-25 October 2026: current stable-overlay-v11 profile adds centered turtle artwork,
-larger full-screen live logs/progress, cached text-surface composition and USB
-reconnect recovery. Transport/polling matches the twice cable-tested v8 profile.
-Build and source notices are preserved; see validation/uefi/ and QUICKSTART.txt.
-
-28 October 2026: live-reset-v12 retains the v11 turtle/font/log/reconnect
-implementation and dispatches exact Dodge reboot/oem reboot to EFI cold reset
-before active-touch guards. It does not clean up or reuse GPU-owned memory.
-192 sanitizer dispatch cases passed. Live seven-core GPU iOS reset to Android
-through fastboot reboot; Android startup completed in22.7seconds. Validation:
-validation/uefi/live-reset/STATUS.json. This source change requires loading the
-new RAM UEFI; it cannot patch an already running older loader.
+Boot with fastboot boot only. Firmware templates and generated images remain local. See validation/screen-brightness and QUICKSTART.txt.

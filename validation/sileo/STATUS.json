@@ -1,0 +1,13 @@
+{
+  "user_confirmed_sileo_opens": true,
+  "sileo_version": "2.5.1",
+  "ellekit_version": "0.4.5",
+  "preferenceloader_version": "2.2.6-1",
+  "bootstrap": "Procursus 1800 rootless",
+  "installed_package_records": 67,
+  "bootstrap_in_ram": true,
+  "phone_partition_writes": false,
+  "network_package_downloads_verified": false,
+  "arbitrary_tweak_compatibility_verified": false,
+  "raw_logs_in_repository": false
+}
