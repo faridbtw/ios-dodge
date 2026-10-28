@@ -30,6 +30,9 @@
 #include <pexpert/pexpert.h>
 #include <sys/systm.h>
 #include <sys/proc.h>
+#include "MiniFramebufferScale.h"
+#include "MiniFramebufferCommit.h"
+#include <kern/sched_prim.h>
 
 extern "C" {
 #include <console/video_console.h>
@@ -39,6 +42,10 @@ extern struct vc_info vinfo;            /* the boot framebuffer, as the text con
 #include <IOKit/IOBufferMemoryDescriptor.h>
 
 #include "MiniIOSurface.h"
+
+extern "C" vm_offset_t ml_io_map(vm_offset_t, vm_size_t);
+extern "C" bool redwood_platform_is_annibale(void);
+extern "C" void loader_log_line(const char *);
 
 extern "C" void redwood_tl(const char * format, ...) __printflike(1, 2);
 
@@ -83,7 +90,7 @@ enum {
 
 #define FRAME_TIMES             64                      /* milliseconds told apart between two frames */
 #define FRAME_PAUSE             90                      /* from so many on, nothing was moving: not a slow frame */
-#define SWAP_GPU_MS             500                     /* a frame the GPU has not drawn by then is shown as it is */
+#define SWAP_GPU_MS             500                     /* an unfinished GPU frame is dropped; the panel keeps its last frame */
 #define SWAP_HELD_MS            700                     /* a swap that cannot be taken by then is not shown at all */
 
 #define FOURCC(a, b, c, d) ((uint32_t)(a) << 24 | (uint32_t)(b) << 16 | (uint32_t)(c) << 8 | (uint32_t)(d))
@@ -230,7 +237,12 @@ class IOMobileFramebuffer : public IOService
 
 public:
 	IOLock *        fLock;
-	uint8_t *       fBase;                  /* the boot framebuffer: the panel */
+	IOBufferMemoryDescriptor * fShadowMemory;
+ uint8_t * fShadow;
+ volatile uint32_t * fTE;
+ struct mini_fb_te fTEState;
+ uint32_t fCommits;
+ uint8_t *       fBase;                  /* the boot framebuffer: the panel */
 	uint32_t        fPanelWidth, fPanelHeight, fRowBytes;
 	uint32_t        fWidth, fHeight;        /* the display as user space sees it */
 	MiniIOSurface * fDefaultSurface;
@@ -300,6 +312,7 @@ public:
 	MiniIOSurface * defaultSurface(void);
 	void present(const uint8_t * swap);
 	void show(const uint8_t * swap, MiniIOSurface ** surfaces);
+ void commitFrame(void);
 	void presenter(void);
 	static void presenterMain(void * self, wait_result_t result);
 	void reportFrameTimes(void);
@@ -424,6 +437,20 @@ IOMobileFramebuffer::start(IOService * provider)
 	fPanelWidth = vinfo.v_width;
 	fPanelHeight = vinfo.v_height;
 	fRowBytes = vinfo.v_rowbytes;
+ uint32_t gpu_stage = 0, gl = 0;
+ PE_parse_boot_argn("adreno8", &gpu_stage, sizeof(gpu_stage));
+ PE_parse_boot_argn("gl", &gl, sizeof(gl));
+ if (gpu_stage == 23 && gl == 1 && fPanelWidth == 1440 && fPanelHeight == 3168 &&
+     fRowBytes >= fPanelWidth * 4 && fRowBytes <= 32768) {
+  const size_t bytes = (size_t)fRowBytes * fPanelHeight;
+  fShadowMemory = IOBufferMemoryDescriptor::inTaskWithOptions(kernel_task, kIODirectionInOut, bytes, PAGE_SIZE);
+  if (fShadowMemory) {
+   fShadow = (uint8_t *)fShadowMemory->getBytesNoCopy();
+   memcpy(fShadow, fBase, bytes);
+   loader_log_line("op13-display: complete-frame shadow composition enabled; no live scaling writes\n");
+  } else loader_log_line("op13-display: shadow allocation failed; retaining previous scanout path\n");
+ }
+
 	fWidth = gFBWidth ? gFBWidth : fPanelWidth;
 	fHeight = gFBHeight ? gFBHeight : fPanelHeight;
 	if (gFBScale != 0 && gFBScale != kFBDefaultScale) {
@@ -564,18 +591,6 @@ IOMobileFramebuffer::defaultSurface(void)
 }
 
 /*
- * Two pixels mixed: `w` of 256 of the second. Two of the four channels at a time, in one word.
- */
-static inline uint32_t
-blend(uint32_t a, uint32_t b, uint32_t w)
-{
-	uint32_t rb = ((a & 0xff00ff) * (256 - w) + (b & 0xff00ff) * w) >> 8 & 0xff00ff;
-	uint32_t ga = ((a >> 8 & 0xff00ff) * (256 - w) + (b >> 8 & 0xff00ff) * w) & 0xff00ff00;
-
-	return rb | ga;
-}
-
-/*
  * Where the middle of the `i`th of `out` pixels falls among `in` of them, in 256ths of a pixel,
  * kept within the first and the last.
  */
@@ -608,6 +623,10 @@ IOMobileFramebuffer::drawRows(const RowJob * job, int32_t y0, int32_t y1, uint32
 	int32_t px0 = job->px0, py0 = job->py0, px1 = job->px1, py1 = job->py1, cx0 = job->cx0, cx1 = job->cx1;
 	bool filter = job->filter;
 
+	if (cx1 <= cx0) {
+		return;
+	}
+
 	for (int32_t y = y0; y < y1; y++) {
 		const uint32_t * from;
 		uint32_t * to;
@@ -615,7 +634,7 @@ IOMobileFramebuffer::drawRows(const RowJob * job, int32_t y0, int32_t y1, uint32
 		if (y < 0 || (uint32_t) y >= fPanelHeight) {
 			continue;
 		}
-		to = (uint32_t *) (fBase + (size_t) y * fRowBytes);
+		to = (uint32_t *) ((fShadow ? fShadow : fBase) + (size_t) y * fRowBytes);
 		if (job->unscaled) {
 			/* not scaled at all */
 			memcpy(to + px0, pixels + (size_t) (sy + y - py0) * stride + (size_t) sx * 4, (size_t) sw * 4);
@@ -632,13 +651,7 @@ IOMobileFramebuffer::drawRows(const RowJob * job, int32_t y0, int32_t y1, uint32
 				const uint32_t * lower = (const uint32_t *) (pixels + (size_t) (sy + row + 1) * stride) + sx;
 				uint32_t first = fColumn[cx0], last = fColumn[cx1 - 1] + 1 < (uint32_t) sw ? fColumn[cx1 - 1] + 1 : fColumn[cx1 - 1];
 
-				uint32_t * __restrict mixed = blendRow;
-
-				for (uint32_t c = first; c <= last; c++) {
-					uint32_t a = upper[c], b = lower[c];
-
-					mixed[c] = a == b ? a : blend(a, b, weight);           /* (most of a screen is the same as next to it) */
-				}
+				mixRows(upper, lower, blendRow, first, last, weight);
 				from = blendRow;
 			}
 		} else {
@@ -659,15 +672,7 @@ IOMobileFramebuffer::drawRows(const RowJob * job, int32_t y0, int32_t y1, uint32
 			}
 		}
 		if (filter) {
-			const uint32_t * __restrict column = fColumn + cx0;
-			const uint16_t * __restrict weights = fColumnWeight + cx0;
-			uint32_t * __restrict out = to + cx0;
-
-			for (uint32_t i = 0, n = (uint32_t) (cx1 - cx0); i < n; i++) {
-				uint32_t c = column[i], w = weights[i], a = from[c];
-
-				out[i] = w == 0 || a == from[c + 1] ? a : blend(a, from[c + 1], w);
-			}
+			scaleRow(from, to + cx0, fColumn + cx0, fColumnWeight + cx0, (uint32_t) (cx1 - cx0), (uint32_t) sw);
 		} else {
 			for (int32_t x = cx0; x < cx1; x++) {
 				to[x] = from[fColumn[x]];
@@ -927,6 +932,44 @@ IOMobileFramebuffer::presenter(void)
 	}
 }
 
+/* Only this final copy writes scanout. Scaling helpers write cached shadow RAM. */
+static uint64_t commit_now(void *)
+{ uint64_t ns; absolutetime_to_nanoseconds(mach_absolute_time(), &ns); return ns; }
+static unsigned commit_level(void *cookie)
+{ return ((IOMobileFramebuffer *)cookie)->fTE[1] & 1u; }
+static void commit_sleep(void *cookie, uint64_t ns)
+{
+ uint64_t deadline; nanoseconds_to_absolutetime(ns, &deadline);
+ assert_wait_deadline((event_t)cookie, THREAD_UNINT, deadline);
+ thread_block(THREAD_CONTINUE_NULL);
+}
+static void commit_copy(void *to, const void *from, size_t n) { memcpy(to, from, n); }
+void IOMobileFramebuffer::commitFrame(void)
+{
+ if (!fShadow) return;
+ if (!fCommits && redwood_platform_is_annibale()) {
+  volatile uint32_t *gpio = (volatile uint32_t *)ml_io_map(0x0f156000, 0x1000);
+  /* Android DT and prior live TE probe identify GPIO86 as panel TE input.
+   * Read configuration and input only: no pin mux, latch or display writes. */
+  if (gpio && !(gpio[0] & 0x200u)) { fTE = gpio; fTEState.enabled = 1; }
+ }
+ const struct mini_fb_te_io io = {this, commit_now, commit_level, commit_sleep};
+ uint64_t began = commit_now(this);
+ int synced = mini_fb_wait_te(&fTEState, &io);
+ uint64_t copy_began = commit_now(this);
+ mini_fb_commit_rows(fBase, fShadow, fPanelWidth, fPanelHeight, fRowBytes, commit_copy);
+ __asm__ volatile("dsb sy" ::: "memory");
+ uint64_t ended = commit_now(this);
+ if (fCommits < 8 || (fCommits % 120) == 0) {
+  char line[256];
+  snprintf(line, sizeof(line), "op13-display: commit %u TE=%d period-us=%llu wait-us=%llu copy-us=%llu failures=%u\n",
+      fCommits, synced, fTEState.period/1000, (copy_began-began)/1000,
+      (ended-copy_began)/1000, fTEState.failures);
+  loader_log_line(line);
+ }
+ fCommits++;
+}
+
 /* A swap's surfaces onto the panel, once the GPU is done with them. */
 void
 IOMobileFramebuffer::show(const uint8_t * swap, MiniIOSurface ** surfaces)
@@ -939,13 +982,29 @@ IOMobileFramebuffer::show(const uint8_t * swap, MiniIOSurface ** surfaces)
 
 	for (unsigned layer = 0; layer < SWAP_LAYERS; layer++) {
 		if (surfaces[layer] != NULL && !MiniIOSurfaceDrawn(surfaces[layer], SWAP_GPU_MS)) {
-			IOLog("MiniIOMobileFramebuffer: swap %u: the GPU is not done with surface %u after %u ms; shown as it is\n",
-			    swapWord(swap, SWAP_ID), swapWord(swap, SWAP_SURFACE(layer)), SWAP_GPU_MS);
+			static unsigned unfinishedReports;
+			if (unfinishedReports < 4) {
+				unfinishedReports++;
+				IOLog("MiniIOMobileFramebuffer: swap %u: surface %u is not GPU-complete; dropped, keeping the displayed frame\n",
+				    swapWord(swap, SWAP_ID), swapWord(swap, SWAP_SURFACE(layer)));
+			}
+			fStatWaiting += mach_absolute_time() - began;
+			/* The presenter holds a local swap/surface snapshot. Release only
+			 * this queue slot; it drops all surface holders after show returns.
+			 * No pixel read, clear, record or displayed-frame state precedes this.
+			 */
+			IOLockLock(fSwapLock);
+			fSwapFirst = (fSwapFirst + 1) % SWAP_QUEUE;
+			fSwapsWaiting--;
+			fStatLost++;
+			IOLockWakeup(fSwapLock, &fSwapsWaiting, true);
+			IOLockUnlock(fSwapLock);
+			return;
 		}
 	}
 	fStatWaiting += mach_absolute_time() - began;
 	began = ready = mach_absolute_time();
-	if (gOnTheBeat) {
+	if (gOnTheBeat && !fShadow) {
 		uint64_t period, aim, next;
 
 		nanoseconds_to_absolutetime(NSEC_PER_SEC / refreshHz(), &period);
@@ -970,12 +1029,6 @@ IOMobileFramebuffer::show(const uint8_t * swap, MiniIOSurface ** surfaces)
 		}
 	}
 	shown = began;
-	/* its turn has come: the swap after it may be handed over */
-	IOLockLock(fSwapLock);
-	fSwapFirst = (fSwapFirst + 1) % SWAP_QUEUE;
-	fSwapsWaiting--;
-	IOLockWakeup(fSwapLock, &fSwapsWaiting, true);
-	IOLockUnlock(fSwapLock);
 	IOLockLock(fLock);
 	if (fLastFrame != 0) {
 		absolutetime_to_nanoseconds(began - fLastFrame, &nanos);
@@ -1011,7 +1064,7 @@ IOMobileFramebuffer::show(const uint8_t * swap, MiniIOSurface ** surfaces)
 			/* the bottom layer taken away: nothing is shown, the screen is black */
 			if (layer == 0 && (set & 1) && fGraphics) {
 				for (uint32_t y = 0; y < fPanelHeight; y++) {
-					bzero(fBase + (size_t) y * fRowBytes, (size_t) fPanelWidth * 4);
+					bzero((fShadow ? fShadow : fBase) + (size_t) y * fRowBytes, (size_t) fPanelWidth * 4);
 				}
 			}
 			continue;
@@ -1042,6 +1095,12 @@ IOMobileFramebuffer::show(const uint8_t * swap, MiniIOSurface ** surfaces)
 			}
 		}
 	}
+ commitFrame();
+ IOLockLock(fSwapLock);
+ fSwapFirst = (fSwapFirst + 1) % SWAP_QUEUE;
+ fSwapsWaiting--;
+ IOLockWakeup(fSwapLock, &fSwapsWaiting, true);
+ IOLockUnlock(fSwapLock);
 	drawn = mach_absolute_time();
 	if (recorded != NULL) {
 		record(recorded);
@@ -1487,6 +1546,7 @@ publishDisplayNode(void)
 #define kAcceleratorPluginClassNameKey "MetalPluginClassName"
 
 static bool gAcceleratorTakesProperties;        /* boot-arg metal=1 */
+
 
 class IOAcceleratorES : public IOService
 {

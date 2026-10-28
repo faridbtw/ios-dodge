@@ -19,7 +19,7 @@ The XNU snapshot includes both active source and historical `files/` overlays. T
 - The user reported the original CoreAnimation software compositor is faster than Mesa softpipe.
 - The battery diagnostic collected 39 fresh samples with changing current, voltage and temperature, charging status, and successful timed cold-reset recovery.
 - The user confirmed percentage and charging indication in the eight-core interactive build, then confirmed the charging bolt follows unplug/reconnect.
-- GPU command submission and 120 FPS remain unverified/unfinished.
+- This describes the earlier software-renderer baseline. The 28 October GPU/display validation below supersedes its GPU status;120FPS remains unverified.
 
 Selected build and status metadata is preserved under `validation/`. Raw device logs, identifiers, firmware dumps and Apple images are omitted.
 
@@ -57,3 +57,16 @@ Retain the original notices in every source subtree. The kernel project and XNU 
 - Two physical cable cycles passed on the `usb-reconnect-v8` profile. Commands recovered in the same session; a previously staged payload remained usable, and new uploads/log downloads passed. The USB transport and polling functions are unchanged in `stable-overlay-v11`.
 - Repeated scrolling on the final profile remained responsive. The same loader then started the working eight-core iOS payload with battery and slider support.
 - `validation/uefi/` contains sanitized status and artifact hashes. Boot images, system images, raw device logs, session cookies and device identifiers are omitted.
+
+## 28 October 2026 GPU, display, wallpaper and live reset update
+
+- Source input: user-supplied `OnePlus13-GLES-v3-Sources-20261028-191401.tar.7z`, recovered v3-dt-concurrency. Its18,825 regular-file hashes and10 tar symlinks were checked locally.
+- Archive runtime source pins: kernel `dc49065f8f17c3683925270388eba128f28eab33`, userland `2051390a14a9d967d185bd8f294fc086bf29c8e8`, workspace `10e32a564c19ac10d4cf86a085b9d3803e030fab`. The recovered v3 also includes later documented concurrency repairs; these pins identify provenance, not a complete reproducible upstream checkout.
+- Paired Adreno830 service/BO/context/HWSCHED/SMMU code, GLES bridge and Mesa source retain their existing notices. `source/mesa26-op13/` records the exact upstream26.2.5 tar hash and consolidated59-file patch. Applying it to the verified tarball reproduced every recorded changed-file hash; generated Python caches/rejections were excluded.
+- The active XNU tree integrates the GPU code with existing battery and slider support. Secure device-tree searches use per-call traversal state; immutable board matching is cached before concurrent GPU clients start. Unsafe reuse of GPU-owned memory remains blocked.
+- `MiniFramebufferCommit.h` and the active framebuffer driver add full-frame shadow composition and bounded read-only GPIO86 TE synchronization. No display-register, pinmux or panel-mode writes are introduced.1,187 sanitizer frame-copy/timing cases passed. User confirmed horizontal tearing is gone.
+- `source/wallpaper-preview/preview.m` replaces only the verified20F66 `PBFHomeScreenPreviewImageBuilder _imageForView:` implementation, after checking its cache-relative address and ObjC ABI. Native catalog services are enabled on demand. The lock-screen picker remains guarded, not fixed.
+- `source/touch-runtime-v15/loader.c` now matches the v12 live-reset behavior. Exact Dodge reboot commands reach EFI cold reset before touch guards.192 sanitizer dispatch cases and an actual live-iOS-to-Android reset passed.
+- The completed live-USB profile is included. Unfinished sound/Wi-Fi experiments and audio diagnostic code from the local workspace are not included in this publication. The battery source retains the tested native transport and adds only the matched seven-core GLES profile acceptance.
+- The checkout's native kernel is built separately with restored local-only dependencies, including the ignored legacy FocalTech firmware header. Phone validation summaries identify the original local test artifacts; this source-only publication does not claim their binaries are byte-identical to a rebuild with paused diagnostics excluded.
+- `validation/gpu-gles/`, `validation/display/`, `validation/wallpaper/`, and `validation/uefi/live-reset/` hold sanitized results and hashes. Factory slider calibration is redacted. Firmware, Apple files, device identifiers, private network data and raw logs remain local.

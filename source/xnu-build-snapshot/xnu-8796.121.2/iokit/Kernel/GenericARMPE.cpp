@@ -26,6 +26,7 @@ extern "C" {
 kern_return_t processor_start(processor_t processor);
 kern_return_t processor_exit(processor_t processor);
 extern uint32_t processor_avail_count;
+void loader_log_line(const char *line);
 
 /* osfmk/arm64/psci_smp.c and gic_v3_irq.c */
 void psci_smp_init(void);
@@ -67,6 +68,23 @@ public:
 };
 
 OSDefineMetaClassAndStructors(GenericARMCPU, IOCPU);
+
+/* Normal printf uses the hardware console; the live fastboot log reads this
+ * existing retained log instead. Mirror CPU start state through the same path
+ * already used by the GPU and scheduler pairing messages. */
+static void platformCPUPrintf(const char *format, ...) __printflike(1, 2);
+static void
+platformCPUPrintf(const char *format, ...)
+{
+	char line[256];
+	va_list args;
+	va_start(args, format);
+	vsnprintf(line, sizeof(line), format, args);
+	va_end(args);
+	loader_log_line(line);
+	printf("%s", line);
+}
+
 
 /* The kernel's number for the processor of a /cpus node, -1 if it is not to be used (boot-arg cpus=N). */
 int
@@ -120,7 +138,11 @@ GenericARMCPU::start(IOService * provider)
 void
 GenericARMCPU::run(void)
 {
-	processor_start(machProcessor);
+	platformCPUPrintf("GenericARMCPU: cpu %u phys=%#x starting on cpu %d state=%u\n",
+	    (unsigned)getCPUNumber(), physID, cpu_number(), (unsigned)getCPUState());
+	const kern_return_t result = processor_start(machProcessor);
+	platformCPUPrintf("GenericARMCPU: cpu %u phys=%#x start=%d state=%u, %u processors available\n",
+	    (unsigned)getCPUNumber(), physID, result, (unsigned)getCPUState(), processor_avail_count);
 }
 
 /* On the processor itself, with its interrupts off, when it joins (or rejoins) the scheduler. */
@@ -267,6 +289,7 @@ GenericARMPE::start(IOService * provider)
 		static thread_call_t later_call;
 
 		PE_parse_boot_argn("small_cores_after", &later, sizeof(later));
+		platformCPUPrintf("GenericARMPE: small_cores_after=%u; boot cpu=%d\n", later, master_cpu);
 		cpus[master_cpu]->run();
 		for (unsigned int number = 0; number < MAX_CPUS; number++) {
 			if (cpus[number] != NULL && number != (unsigned int)master_cpu) {
@@ -280,18 +303,20 @@ GenericARMPE::start(IOService * provider)
 			uint64_t deadline;
 
 			later_call = thread_call_allocate([](thread_call_param_t, thread_call_param_t) {
+				platformCPUPrintf("GenericARMPE: delayed CPU start begins on cpu %d, %u processors available\n",
+				    cpu_number(), processor_avail_count);
 				for (unsigned int number = 0; number < MAX_CPUS; number++) {
 					if (cpus[number] != NULL && ml_get_topology_info()->cpus[number].l2_access_penalty != 0) {
 						cpus[number]->run();
 					}
 				}
-				IOLog("GenericARMPE: the slower cores started too: %u processors running\n", processor_avail_count);
+				platformCPUPrintf("GenericARMPE: the slower cores started too: %u processors running\n", processor_avail_count);
 			}, NULL);
 			clock_interval_to_deadline(later, NSEC_PER_SEC, &deadline);
 			thread_call_enter_delayed(later_call, deadline);
 		}
 		if (count > 1) {
-			IOLog("GenericARMPE: %u of %u processors are running\n", processor_avail_count, count);
+			platformCPUPrintf("GenericARMPE: %u of %u processors are running\n", processor_avail_count, count);
 		}
 	}
 

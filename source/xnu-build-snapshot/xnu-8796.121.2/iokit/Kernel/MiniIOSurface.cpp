@@ -744,6 +744,62 @@ MiniIOSurfaceCopy(uint32_t sid)
 	return s;
 }
 
+/* Native imports name task memory, not a surface ID. Both descriptors are
+ * already pinned; compare every 4 KiB GPU page of the whole pixel allocation.
+ * Hold under the table lock before a client can return the surface to its pool.
+ * No GPU lock is taken here, and an unmatched import remains an ordinary BO.
+ */
+MiniIOSurface *
+MiniIOSurfaceCopyWithBacking(IOMemoryDescriptor * memory, uint64_t bytes)
+{
+	MiniIOSurface * found = NULL;
+
+	if (gSurfaceLock == NULL || memory == NULL || bytes == 0 || (bytes & 4095) || memory->getLength() != bytes) {
+		return NULL;
+	}
+	IOLockLock(gSurfaceLock);
+	for (uint32_t sid = 1; sid < MINISURF_TABLE_SIZE; sid++) {
+		MiniIOSurface * s = gSurfaceTable[sid];
+		if (s == NULL || s->kpixels == NULL || s->info.allocSize == 0) {
+			continue;
+		}
+		uint64_t alloc = s->info.allocSize;
+		IOMemoryDescriptor * backing = s->client ? s->client : s->memory;
+		uint64_t base = s->client ? 0 : PAGE_SIZE;
+		if (bytes != ((alloc + 4095) & ~4095ull) || backing == NULL ||
+		    base > backing->getLength() || alloc > backing->getLength() - base) {
+			continue;
+		}
+		bool match = true;
+		for (uint64_t off = 0; off < bytes; off += 4096) {
+			IOByteCount importedLength = 0, backingLength = 0;
+			addr64_t importedPA = memory->getPhysicalSegment(off, &importedLength, kIOMemoryMapperNone);
+			addr64_t backingPA = backing->getPhysicalSegment(base + off, &backingLength, kIOMemoryMapperNone);
+			/* Wrapped allocations may end within their last pinned page. Compare
+			 * its physical page too, while respecting the source descriptor end. */
+			uint64_t sourceBytes = alloc - off < 4096 ? alloc - off : 4096;
+			if (importedPA == 0 || (importedPA & 4095) || importedPA != backingPA ||
+			    importedLength < 4096 || backingLength < sourceBytes) {
+				match = false;
+				break;
+			}
+		}
+		if (match) {
+			/* Two wrappers of the same pages do not identify one surface. */
+			if (found != NULL) {
+				found = NULL;
+				break;
+			}
+			found = s;
+		}
+	}
+	if (found != NULL) {
+		surfaceHold(found);
+	}
+	IOLockUnlock(gSurfaceLock);
+	return found;
+}
+
 /* How many surfaces there are and how much (wired) memory they hold: for the kernel's memory report. */
 extern "C" void
 MiniIOSurfaceUsage(uint32_t * count, uint64_t * bytes)

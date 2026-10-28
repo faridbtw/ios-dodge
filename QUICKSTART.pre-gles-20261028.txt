@@ -1,0 +1,98 @@
+OnePlus 13: current iOS RAM boot quickstart
+==========================================
+
+Current iOS UEFI:
+  experimental/uefi-turtle/stable-overlay-v11/dodge-ios-uefi.img
+
+Matching current interactive iOS payload:
+  experimental/slider/live-original-compositor-v1/payload.bin
+
+This is the working eight-core, original-compositor build with live battery
+and alert slider support. The turtle UEFI adds larger live logs, steady
+centered logo and USB cable reconnection recovery. There is no return timer.
+
+The older dodge-known-v31-usb-loader.img is the BASELINE INPUT for building
+new UEFI images. It is not the current turtle UEFI. The old touch-v15 and
+Mesa boot examples are retained in QUICKSTART.legacy-20261025.txt as history.
+
+Boot from Android
+-----------------
+Run these commands from this project directory. Replace YOUR_SERIAL with
+this phone's adb/fastboot serial. Keep compatible iOS16.5 /20F66 system.apfs
+in the project root; never add it to GitHub.
+
+adb -s YOUR_SERIAL reboot bootloader
+fastboot -s YOUR_SERIAL getvar product
+
+Product must be sun. Boot the CURRENT iOS UEFI into RAM:
+
+fastboot -s YOUR_SERIAL boot experimental/uefi-turtle/stable-overlay-v11/dodge-ios-uefi.img
+
+Wait for the temporary xnuloader USB device, then stage iOS:
+
+fastboot -s xnuloader getvar product
+fastboot -s xnuloader stage experimental/slider/live-original-compositor-v1/payload.bin
+fastboot -s xnuloader oem ramdisk
+fastboot -s xnuloader stage system.apfs
+fastboot -s xnuloader oem op13-slider-probe
+fastboot -s xnuloader oem sm8750-touch-arm
+fastboot -s xnuloader oem run 0
+
+Only RAM boot/staging is used. Never flash or erase phone partitions.
+Native eight-core iOS does not expose this UEFI USB connection. A physical
+restart into Android may be needed to leave iOS. USB reconnect recovery
+applies while the UEFI manager itself is running.
+
+Automatic helper
+----------------
+From Android, use a new diagnostics output directory:
+
+python3 tools/boot-op13-play.py --serial YOUR_SERIAL --payload experimental/slider/live-original-compositor-v1/payload.bin --output diagnostics/ios-next
+
+The helper verifies artifacts and prefers the phone-tested v11 turtle
+UEFI. It prepares the slider sensor before touch handoff. The payload's
+BUILD.json still records the original matching sensor-probe-v5 loader;
+that is the verified fallback, not the helper's preferred current image.
+
+Hardware status
+---------------
+Eight cores, touch, wallpaper, live battery percentage/charging indication,
+and bottom ring / middle silent / top Do Not Disturb have been validated.
+The current renderer is gl=0 (CoreAnimation software), not Mesa softpipe.
+Adreno830 hardware acceleration and smooth120FPS are not established.
+Sound work is paused; its checkpoint is SOUND-RESUME.txt.
+
+Linux / Windows is a DIFFERENT second UEFI
+-----------------------------------------
+experimental/multiboot/linux-windows-v1/dodge-uefi.img
+
+Do not use that image for the iOS staging sequence. It is a separate EFI
+manager for supplied ARM64 FAT boot media. Actual Linux/Windows OS boots
+are not yet verified. Its instructions are in:
+experimental/multiboot/linux-windows-v1/README.txt
+
+If that manager is idle, fastboot -s xnuloader reboot returns to Android;
+then follow the iOS instructions above. If an OS has taken over, physically
+restart instead. The second image does not replace the current iOS UEFI.
+
+UEFI source/build notes: experimental/uefi-turtle/README.txt
+
+Optional live-USB iOS profile (verified 2026-10-26)
+------------------------------------------------
+Use the dedicated seven-core profile to retain USB diagnostics during iOS:
+
+/opt/homebrew/bin/python3 tools/boot-op13-live-usb.py --serial YOUR_SERIAL --payload experimental/usb-live/seven-core-v1/payload.bin --output diagnostics/usb-next
+
+CPU0 remains in firmware; iOS runs on seven cores. Live log downloads and
+physical USB reconnection were verified while iOS stayed running. Touch and
+battery were confirmed by the user. This is firmware fastboot access, not an
+iOS SSH/file shell. The normal eight-core payload remains available.
+
+Read live logs:
+fastboot -s xnuloader getvar result
+fastboot -s xnuloader oem log
+fastboot -s xnuloader get_staged ios-live.log
+
+Source-only checkout: recreate the local payload with
+ tools/make-op13-live-usb-payload.py and your locally built matching kernel.
+Boot images, system.apfs, calibration and raw logs are not included in Git.

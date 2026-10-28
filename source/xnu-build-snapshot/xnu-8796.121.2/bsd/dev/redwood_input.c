@@ -210,6 +210,7 @@ void
 redwood_input_init(void)
 {
 	int major = cdevsw_add(-1, &touch_cdevsw);
+	oneplus_gpu_platform_init();
 
 	if (major < 0 || devfs_make_node(makedev(major, 0), DEVFS_CHAR, UID_ROOT, GID_WHEEL, 0666, "redwood-touch") == NULL) {
 		printf("redwood-touch: cannot create the device\n");

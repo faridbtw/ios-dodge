@@ -1,0 +1,8 @@
+{
+  "live_ios_software_cold_reset_verified": true,
+  "android_boot_completed": true,
+  "seconds": 22.7,
+  "phone_partition_writes": false,
+  "loader_sha256": "40861c9e4258b30902fc806caad83a09d104001e3587434aabeb046d466c913b",
+  "raw_logs_in_repository": false
+}

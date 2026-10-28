@@ -1,143 +1,95 @@
-ios-dodge: current working configuration
-=======================================
+Source-only checkout: generated experimental/ artifacts below are local inputs,
+not files uploaded to GitHub. Restore matching local templates/SDK/firmware first.
 
-Device: OnePlus 13 / dodge / SM8750. Android fastboot product: sun.
-Current iOS UEFI: experimental/uefi-turtle/stable-overlay-v11/dodge-ios-uefi.img
-Current local payload: experimental/slider/live-original-compositor-v1/payload.bin
-These paths describe the working development bundle; binaries are not in Git.
-The older dodge-known-v31-usb-loader.img is the build baseline, not the
-current interactive turtle UEFI. See the UEFI build section below.
+OnePlus 13: current iOS RAM boot quickstart
+==========================================
 
-Configuration:
-  cpus=8 gl=0 fb_hz=60 op13_batt=4
-  gpu=0 adreno=0 metal=0 adsp=0
-  ufs=0 ufs_write=0 var_store=0 cpufreq=0
-  loader_return_after=0
-  Full wallpaper services retained; CPU/GL benchmarks omitted.
+Current iOS UEFI (live software reboot verified):
+  experimental/uefi-turtle/live-reset-v12/dodge-ios-uefi.img
 
-The original compositor was selected after the user reported severe lag with
-Mesa softpipe. Removing the dock background alone was insufficient.
+Current GPU + wallpaper + display payload (validated 2026-10-28):
+  experimental/display/anti-tear-v1/payload.bin
 
-Battery status:
-  39 fresh samples verified with the sleeping poller in a timed diagnostic.
-  User confirmed percentage and charging bolt in the eight-core UI.
-  User confirmed unplug/reconnect changes the charging bolt correctly.
-  No claim is made for battery-health/cycle metadata or GPU acceleration.
+Adreno830 GLES hardware rendering with Mesa26.2.5, native live battery and
+alert slider. Seven iOS cores run; CPU0 stays in firmware for live USB logs.
+User confirmed scrolling, battery and slider work. No 120fps claim; sustained
+stability still needs longer observation. Metal is off.
+The centered turtle, larger logs and USB reconnect implementation are retained.
+The v12 UEFI also accepts cold reboot during an active iOS touch lease.
 
-Restore matching local boot inputs first. From Android, the helper performs
-the RAM boot and staging sequence:
+Screen tearing: frames are now composed off-screen and copied to scanout
+after the physical panel TE edge. User confirmed horizontal tearing is gone
+and scrolling is usable. Observed TE period8290us (~120.6Hz), final-copy
+samples ~1.2–2.9ms, no TE timeout. This is not a120FPS application claim.
+Working wallpaper-only GPU fallback: experimental/wallpaper/picker-v3-guarded/payload.bin.
+Display source/build/validation: validation/display/ and tools/test-op13-display-commit.py.
 
-python3 tools/boot-op13-play.py --serial YOUR_SERIAL --payload experimental/slider/live-original-compositor-v1/payload.bin --output diagnostics/ios-next
+Wallpapers: use Settings > Wallpaper > Add New Wallpaper. User confirmed
+selection works. Native catalog services are available and the Metal-only
+home-preview capture uses a scoped CoreGraphics replacement. Preview images
+were generated without the earlier PosterBoard aborts in the saved test.
+Lock-screen long-press selection remains DISABLED to avoid its black hosted
+scene. That separate picker rendering problem is still unfinished.
 
-Manual current iOS boot sequence, after the matched phone enters fastboot:
+Boot from Android
+-----------------
+Keep the matching local system.apfs in the project root. Never publish it.
+Run from this project directory, using the connected phone's serial:
 
-fastboot -s YOUR_SERIAL boot experimental/uefi-turtle/stable-overlay-v11/dodge-ios-uefi.img
-fastboot -s xnuloader stage experimental/slider/live-original-compositor-v1/payload.bin
-fastboot -s xnuloader oem ramdisk
-fastboot -s xnuloader stage system.apfs
-fastboot -s xnuloader oem op13-slider-probe
-fastboot -s xnuloader oem sm8750-touch-arm
-fastboot -s xnuloader oem run 0
+/opt/homebrew/bin/python3 tools/boot-op13-gles-v3.py --payload experimental/display/anti-tear-v1/payload.bin --serial YOUR_SERIAL --output diagnostics/ios-gles-next
 
-Wait for xnuloader to enumerate after fastboot boot. The helper prefers the
-phone-tested v11 turtle image; the payload manifest's original matching
-sensor-probe-v5 loader remains a verified fallback. The separate local
-Linux/Windows image is not the iOS loader and uses different commands.
+Use a NEW diagnostics output directory each time. The helper checks payload,
+kernel, current turtle UEFI and system hashes, verifies Android platform sun,
+uses fastboot boot, stages payload/system into RAM, prepares slider/touch,
+starts iOS and saves three live log captures. It leaves iOS running.
+It never flashes or erases partitions. Cold reset before another GPU session:
+the GPU retains protected memory and cannot safely return to a reused loader.
+With v12 loaded, return to Android from live seven-core iOS with:
 
-Never use fastboot flash or erase. The helper does not write phone partitions.
-The interactive build has no return timer. A physical restart may be needed
-to leave iOS, as USB logging is unavailable while all eight cores run XNU.
+fastboot -s xnuloader reboot
 
-See README.md for the source layout and omitted build inputs.
+This was tested: Android completed startup in about23 seconds. A physical
+restart is only needed if USB/firmware itself is unresponsive. Do not use oem
+stop to reuse GPU memory. Ordinary reset is separate from touch cleanup.
 
-Alert slider (validated 25 October 2026)
---------------------------------------
-Current local payload: experimental/slider/live-original-compositor-v1/payload.bin
-Bottom rings, middle is silent, top enables Do Not Disturb.
-All three physical positions were captured in a timed RAM test; the user
-confirmed Silent Mode and Do Not Disturb in the eight-core interactive build.
-The final build keeps gl=0, live battery, eight cores and no return timer.
-The one-core diagnostic is slower and is not the interactive configuration.
+Read-only package check without contacting the phone:
+/opt/homebrew/bin/python3 tools/boot-op13-gles-v3.py --payload experimental/display/anti-tear-v1/payload.bin --check
 
-The matched loader powers AK09970 through a firmware RPMh ldob1 vote at
-1800mV. The native driver uses the phone's own nine-value factory calibration
-(slider_cal), a sleeping 100ms poll and two matching readings per change.
-DND service requests run off the UI queue and use the hardware client's
-assertion, which is released when leaving the top position.
+Live diagnostics during this seven-core GLES session:
+fastboot -s xnuloader getvar result
+fastboot -s xnuloader oem log
+fastboot -s xnuloader get_staged ios-live.log
 
-Local inputs remain required and are not included in Git: matching baseline
-RAM boot image and payload, SDKs, firmware and factory calibration. The
-source-only repository does not contain a bootable image or system.apfs.
-With those inputs restored, build the matching slider loader:
+Eight-core software-renderer fallback
+------------------------------------
+The previous working payload remains:
+  experimental/slider/live-original-compositor-v1/payload.bin
 
-RAM_ONLY=1 LOADER_PLATFORM=dodge LOADER_BASE=0xC4000000 USB_IDLE_SECONDS=0 EMBEDDED_USB=1 bash source/touch-runtime-v15/build.sh
-python3 tools/pack-op13-diagnostic-loader.py --loader source/touch-runtime-v15/loader.efi --output experimental/slider/sensor-probe-v5/dodge-slider-probe.img
+/opt/homebrew/bin/python3 tools/boot-op13-play.py --serial YOUR_SERIAL --payload experimental/slider/live-original-compositor-v1/payload.bin --output diagnostics/ios-software-next
 
-Compile the updated native kernel and both userland injection libraries,
-placing libredwood.dylib and libredwood-sb.dylib under experimental/slider/userland/.
-Save the phone's /proc/tristatekey/hall_data_calib output as a local file.
-Create and boot the interactive payload from the local validated battery build:
+This fallback uses eight cores and gl=0; it lacks live USB access during iOS.
+Its complete earlier instructions are in QUICKSTART.pre-gles-20261028.txt.
+Sound work remains paused; Wi-Fi remains unfinished.
+GPU build/provenance: SOURCE-PROVENANCE.md and validation/gpu-gles/.
+Wallpaper/reset implementation and validation: source/wallpaper-preview/README.txt,
+validation/wallpaper/ and validation/uefi/live-reset/.
 
-python3 tools/make-op13-slider-payload.py --calibration LOCAL_FACTORY_CALIBRATION.txt --output experimental/slider/live-original-compositor-v1
-python3 tools/boot-op13-play.py --serial YOUR_SERIAL --payload experimental/slider/live-original-compositor-v1/payload.bin --output diagnostics/slider-next
+Optional live-USB iOS profile (verified 2026-10-26)
+------------------------------------------------
+Use the dedicated seven-core profile to retain USB diagnostics during iOS:
 
-The boot helper verifies the loader/payload manifests and prepares the
-sensor before touch handoff. All boot and staging operations use RAM.
-Transport/classification checks work without a connected phone:
-python3 tools/test-op13-slider.py
-Optional hardware-profile check with your locally captured FDT:
-python3 tools/test-op13-slider.py --dtb LOCAL_ANDROID.dtb
+/opt/homebrew/bin/python3 tools/boot-op13-live-usb.py --serial YOUR_SERIAL --payload experimental/usb-live/seven-core-v1/payload.bin --output diagnostics/usb-next
 
-See validation/alert-slider/ for sanitized results and build identities.
+CPU0 remains in firmware; iOS runs on seven cores. Live log downloads and
+physical USB reconnection were verified while iOS stayed running. Touch and
+battery were confirmed by the user. This is firmware fastboot access, not an
+iOS SSH/file shell. The normal eight-core payload remains available.
 
-UEFI turtle, live logs and USB reconnect (validated 25 October 2026)
------------------------------------------------------------------
-Current source: source/touch-runtime-v15/
-Current local image: experimental/uefi-turtle/stable-overlay-v11/dodge-ios-uefi.img
-The source-only repository does not include that image or system.apfs.
+Read live logs:
+fastboot -s xnuloader getvar result
+fastboot -s xnuloader oem log
+fastboot -s xnuloader get_staged ios-live.log
 
-The turtle stays at the physical screen center at its native 300x300 size.
-Log glyphs are 16x32 pixels. Text flows normally through the full screen,
-including behind the turtle; no empty band is reserved for the logo.
-The loader scrolls text in cached RAM and composites the turtle during
-dirty-row display updates, so it never removes the logo between updates.
-Commands and approximately 5% upload milestones appear live. Screen writes
-stop when the kernel takes over the display.
-
-USB disconnect/reconfiguration now aborts old endpoint transfers and clears
-queued command ownership. Failed receives continue pumping USB events.
-Active notifications are not treated as completed transfers. A partial
-payload download must be restaged; completed RAM images remain available.
-Two physical cable cycles recovered without restarting the loader, with
-commands, payload staging and log downloads checked afterward.
-
-Supply these matching local baseline inputs before packaging:
-  dodge-known-v31-usb-loader.img
-  loader-known-v31.efi
-They are excluded from Git. The packer checks the baseline image hash and
-the exact original loader routes; use the provenance hashes in validation/.
-
-PATH=/opt/homebrew/bin:$PATH bash source/touch-runtime-v15/build-probe.sh
-python3 tools/pack-op13-diagnostic-loader.py --loader source/touch-runtime-v15/loader.efi --output experimental/uefi-turtle/stable-overlay-v11/dodge-ios-uefi-base.img
-python3 tools/make-op13-turtle-uefi.py --source experimental/uefi-turtle/stable-overlay-v11/dodge-ios-uefi-base.img --output experimental/uefi-turtle/stable-overlay-v11/dodge-ios-uefi.img
-
-The second packer changes only the firmware splash bitmap in the first
-packer's output. Both steps verify checksums, compression round trips and
-unchanged unrelated firmware files, BootShim, DTB and ramdisk/signature bytes.
-Freshly built receipts have device_validated=false until checked on a phone.
-PE build timestamps can change image hashes between builds.
-
-Boot the resulting image only into RAM:
-adb -s YOUR_SERIAL reboot bootloader
-fastboot -s YOUR_SERIAL boot experimental/uefi-turtle/stable-overlay-v11/dodge-ios-uefi.img
-
-Use the existing staging/slider/touch sequence for the interactive iOS
-payload. The play helper prefers the custom image when its local receipt
-records successful phone validation and both packaging stages verify.
-For a new build, boot it explicitly and verify it before changing that flag.
-
-Host checks:
-python3 tools/test-op13-usb-reconnect.py
-python3 tools/test-op13-turtle-overlay.py
-
-See validation/uefi/ for sanitized results. No audio work is included here.
+Source-only checkout: recreate the local payload with
+ tools/make-op13-live-usb-payload.py and your locally built matching kernel.
+Boot images, system.apfs, calibration and raw logs are not included in Git.

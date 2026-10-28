@@ -178,8 +178,8 @@ str_eq(const char *a, const char *b)
 }
 
 /*
- * Suppress screen writes while the kernel owns the display. In idle UEFI,
- * the live console and USB log both remain available.
+ * Set once the loader takes commands over USB: its log travels that way, and
+ * the screen is left to the kernel (and to "oem screenshot").
  */
 static int screen_quiet;
 static int screen_log_char(char c);
@@ -3973,6 +3973,14 @@ fb_command(char *cmd)
 {
 	usb_last_activity = READ_SYSREG(CNTVCT_EL0);
 	int busy = running_live != NULL;
+ /* A cold reset ends all hardware ownership; it must precede the touch
+  * lease guards, which correctly continue to prohibit RAM reuse and cleanup. */
+ if(PLAT==&platform_dodge && (str_eq(cmd,"reboot")||str_eq(cmd,"oem reboot"))){
+  fb_reply("OKAY","cold resetting to Android");
+  BS->stall(200000);
+  ST->rt->reset_system(0 /* EfiResetCold */,0,0,NULL);
+  for(;;){}
+ }
     screen_quiet = busy;
     if (!busy && !starts_with(cmd, "getvar:") && !str_eq(cmd, "upload") && !str_eq(cmd, "oem log"))
         print("uefi command: %s\n", cmd);

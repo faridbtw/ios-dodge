@@ -1,0 +1,302 @@
+{
+  "upstream_version": "26.2.5",
+  "upstream_archive_sha256": "794b3d1729075dae7ebd47c7283b7ca0cdb5dec668f7f11cc0a5d82f6138a0a5",
+  "changed_files": [
+    {
+      "path": ".gitlab-ci/build/gitlab-ci.yml",
+      "sha256": "aa40dd2c535083a371483842c2fc7c9a5690947619e6cbf7ef18b61f071b5917",
+      "bytes": 23371
+    },
+    {
+      "path": "bin/gen_vs_module_defs.py",
+      "sha256": "ad3c680a1bdf4e5511e93596f9d6c30b50ba93fcdf8272054ded912071f1ab70",
+      "bytes": 5621
+    },
+    {
+      "path": "bin/khronos-update.py",
+      "sha256": "d6294b16612632d9bc6015703e37eca75e96513b32dd9f9a0c19034f43b3111d",
+      "bytes": 18368
+    },
+    {
+      "path": "docs/faq.rst",
+      "sha256": "3da13a6256b18cc14887d34a1eba7cf4e501003fa278e279e37210ef80015191",
+      "bytes": 7509
+    },
+    {
+      "path": "docs/install.rst",
+      "sha256": "4660e2e4d3501193e5474aefb434bdfb56022efb76304780d8060ad9e38ffb37",
+      "bytes": 8322
+    },
+    {
+      "path": "docs/macos.rst",
+      "sha256": "1b7d0812052d97362ed9bcceefa7dd4b8753d12deacfc897ac6a3bce1685073a",
+      "bytes": 1287
+    },
+    {
+      "path": "include/GL/osmesa.h",
+      "sha256": "24215eff7e4847500e02e6bfcafc6a23389b228674f5e0c35565961d169547df",
+      "bytes": 10437
+    },
+    {
+      "path": "include/meson.build",
+      "sha256": "670cc291498be0cf26340a87f057dcc820c60adcbd36037875d823a2beaf8090",
+      "bytes": 2181
+    },
+    {
+      "path": "meson.build",
+      "sha256": "e41db58bebce51b92839b10f9a07dc955b2c2fc087d0f61df8924b41d8b9665a",
+      "bytes": 93870
+    },
+    {
+      "path": "meson.options",
+      "sha256": "7447898f1bd51a2cb9a6d599bb3583d7560e05339a7fe2ff2b7ce6a3c65c0864",
+      "bytes": 22542
+    },
+    {
+      "path": "src/compiler/air/air2nir.c",
+      "sha256": "7c7271b1f0de1c6076d19546804029c9e8dd05433352740b916d00ee7142a9d5",
+      "bytes": 23130
+    },
+    {
+      "path": "src/compiler/air/air_bitcode.c",
+      "sha256": "ca969c530025038e7370c4291ea3cb47ba770c638f238c58b4f81eb78251033b",
+      "bytes": 11737
+    },
+    {
+      "path": "src/compiler/air/air_bitcode.h",
+      "sha256": "0b13de6db8417b1fa45f140a3bc454e92d693721a9d190d821f1d282caf02fa5",
+      "bytes": 3135
+    },
+    {
+      "path": "src/compiler/air/air_intrinsics.c",
+      "sha256": "aaf209b674bead0f7431471b8780c19b08cdfe75c7bb0411035cdf590a2d6280",
+      "bytes": 93963
+    },
+    {
+      "path": "src/compiler/air/air_layout.c",
+      "sha256": "dbcebf6a54c508264cd6dde1684913732a3d3beddac01c18785bc4e2682a0063",
+      "bytes": 4567
+    },
+    {
+      "path": "src/compiler/air/air_metal.c",
+      "sha256": "cb003e088382f165a073164d6ec062bf003788b21baadd4e6345c41c0d2d227f",
+      "bytes": 342386
+    },
+    {
+      "path": "src/compiler/air/air_metal.h",
+      "sha256": "afd8c348cbfd241e54c24126d66cd7b2dc350d155862400b9d77faf9ae0f5d11",
+      "bytes": 76921
+    },
+    {
+      "path": "src/compiler/air/air_metal_test.c",
+      "sha256": "39b41a5997814581503e6335f72a4e3a98bb79c4c12225ac287ceb45fe1c9726",
+      "bytes": 325555
+    },
+    {
+      "path": "src/compiler/air/air_metallib.c",
+      "sha256": "934bea3f4f338ba8c727a85c9a4c3cbe070fb594695f704238fff1f352bbf4b7",
+      "bytes": 3698
+    },
+    {
+      "path": "src/compiler/air/air_module.c",
+      "sha256": "7ffc9326fd22b85f309d0c4770c87649bf042aa234763a5f55d053b1ede6fae7",
+      "bytes": 63043
+    },
+    {
+      "path": "src/compiler/air/air_module.h",
+      "sha256": "829ed284d3f0c815aff38c08d8483b781e904ed5f5e36643076e3ae4554ffee2",
+      "bytes": 11875
+    },
+    {
+      "path": "src/compiler/air/air_print.c",
+      "sha256": "bf69217c8ffa6f1c68e837660a8a14a4ef683d68bb00e3b0a74ae54a37651f04",
+      "bytes": 27804
+    },
+    {
+      "path": "src/compiler/air/air_private.h",
+      "sha256": "de6dd726354c6d07e578d8a5e3ca5643a140b05e93806a54ef4fc7b3cf1742ac",
+      "bytes": 11391
+    },
+    {
+      "path": "src/compiler/air/air_run.c",
+      "sha256": "7c6e9b9f0c0ae00c9beafb8b5524cb5a38518b0608f7773cd7599450c782f198",
+      "bytes": 96208
+    },
+    {
+      "path": "src/compiler/air/air_to_nir.c",
+      "sha256": "685a8de693cae52b241108ddf47457cb7041e21d53002dd5e2cb110694f4e26d",
+      "bytes": 182840
+    },
+    {
+      "path": "src/compiler/air/meson.build",
+      "sha256": "5f34a52018ca5cac4609f1c2ae6903867f813b526a68b0c54480005e3a9f973c",
+      "bytes": 1669
+    },
+    {
+      "path": "src/compiler/air/nir_air.h",
+      "sha256": "25ecad2ba26543bff82ed5f74e31458ca8441777848f1296713692fe35e71fcd",
+      "bytes": 17959
+    },
+    {
+      "path": "src/compiler/meson.build",
+      "sha256": "552d927f66a5130fd2080bda0ec077948c9a70ff0c0a20ac1be58c64b3679d12",
+      "bytes": 1964
+    },
+    {
+      "path": "src/freedreno/drm/freedreno_bo.c",
+      "sha256": "e471ed8c40ea9cddb310ff9435ec9796ffe72da5844db78fa8d21fab267af9f7",
+      "bytes": 19673
+    },
+    {
+      "path": "src/freedreno/drm/meson.build",
+      "sha256": "844f8de62aadfbce74ffc8f4a794480788abf8ddbadf38c87362c14f7c16bb4b",
+      "bytes": 2051
+    },
+    {
+      "path": "src/freedreno/drm/msm/msm_priv.h",
+      "sha256": "817ff04dae06726e0e0346ecce0e00e8a865b4bfe5cc94d0354626255c122665",
+      "bytes": 5817
+    },
+    {
+      "path": "src/freedreno/ir3/ir3_compiler_nir.c",
+      "sha256": "7a49911fb1f46d9a785de1152575e0ac29582f9be0fe4484161f3ea5fef20e39",
+      "bytes": 208601
+    },
+    {
+      "path": "src/freedreno/ir3/ir3_disk_cache.c",
+      "sha256": "31148a8d6a46229fd91896f12ae11ca73a7f89ccbb9a36a149e7acf6f9655321",
+      "bytes": 8425
+    },
+    {
+      "path": "src/freedreno/ir3/ir3_nir.c",
+      "sha256": "848db6c4396bee3ae608d61e40eac65a4d57b9b20f2b32f7740a638befce2ce8",
+      "bytes": 76311
+    },
+    {
+      "path": "src/freedreno/ir3/ir3_nir_lower_io_offsets.c",
+      "sha256": "fa2bffedd481703fb2bd2e72d7f8c3ab19103be3a3a30a2c8f49e0d008d7d3dc",
+      "bytes": 15431
+    },
+    {
+      "path": "src/freedreno/meson.build",
+      "sha256": "4e6ef3d89911470a81ef3103d4c9bdce8d4e1f2b7d42e9995b3565ef22f40d83",
+      "bytes": 2088
+    },
+    {
+      "path": "src/freedreno/vulkan/meson.build",
+      "sha256": "dcf233cf68f81401169ecbfa26dadbb64a0dbce44956a69a440c17e1b41e54e6",
+      "bytes": 7166
+    },
+    {
+      "path": "src/freedreno/vulkan/tu_knl_drm_msm.cc",
+      "sha256": "b694f6bec7d135e89b8c8487ae2289d2435a44a7f7f1dbe00d3243a655418226",
+      "bytes": 51456
+    },
+    {
+      "path": "src/gallium/drivers/freedreno/a6xx/fd6_barrier.cc",
+      "sha256": "d849678a9eefa2bb63ab17d34bcff8a1bfedd5f5a595bc997a7ac8203c440262",
+      "bytes": 5773
+    },
+    {
+      "path": "src/gallium/drivers/freedreno/a6xx/fd6_barrier.h",
+      "sha256": "05fe52c3b90b019be34744902b56a3813b1a8596472eacb3f856cb7df01ed059",
+      "bytes": 1120
+    },
+    {
+      "path": "src/gallium/drivers/freedreno/a6xx/fd6_context.cc",
+      "sha256": "c533ae2e812b5cc9cfefbca147e7baf0f626946486556e7a198f8c31c76ebcd7",
+      "bytes": 11760
+    },
+    {
+      "path": "src/gallium/drivers/freedreno/a6xx/fd6_draw.cc",
+      "sha256": "46f365affea070f71d219d73f2c1d085a866eef6c328dfe5edd6aca0b2f2ea92",
+      "bytes": 26377
+    },
+    {
+      "path": "src/gallium/drivers/freedreno/a6xx/fd6_query.cc",
+      "sha256": "8644b961d9510d044a12e012561d4b63b81b5d5d67bf618d9dcca63e34d89477",
+      "bytes": 35911
+    },
+    {
+      "path": "src/gallium/drivers/freedreno/freedreno_batch.h",
+      "sha256": "cc126c5ecc3fe56184ddeb8e135ddb9ef98b8d8e6f1a400381c4f7fcd31400eb",
+      "bytes": 15012
+    },
+    {
+      "path": "src/gallium/drivers/freedreno/meson.build",
+      "sha256": "1ef574d666af731c19e5693b73bd3c7d71a87d7674b59445ca7f1449951d5934",
+      "bytes": 10212
+    },
+    {
+      "path": "src/gallium/frontends/osmesa/meson.build",
+      "sha256": "58b9e3ec2af9161ba7f8c1b88890e5f8057df4f9888862d08a00c2ce322907b1",
+      "bytes": 478
+    },
+    {
+      "path": "src/gallium/frontends/osmesa/osmesa.c",
+      "sha256": "5dad86cd3a00259a45cb4e93e83f7b977225e382878efafae7f696f80911d73c",
+      "bytes": 29047
+    },
+    {
+      "path": "src/gallium/meson.build",
+      "sha256": "a2cd778bc25fe0fb1f3936e05ed55e394dd8af5aa624f37320e15b88e777b3c4",
+      "bytes": 5962
+    },
+    {
+      "path": "src/gallium/targets/osmesa/meson.build",
+      "sha256": "f16a12e8063195742b1a875c746e951ef79579aa044de58449e67fa04f5d74a1",
+      "bytes": 2475
+    },
+    {
+      "path": "src/gallium/targets/osmesa/osmesa-symbols.txt",
+      "sha256": "d180ed214bdb6777986a090e1b55f3ba26e8a2291c578cddd462f1a5442a81da",
+      "bytes": 23544
+    },
+    {
+      "path": "src/gallium/targets/osmesa/osmesa.def.in",
+      "sha256": "8834012ef8987a418cf56517b2e1b5e9d0527cffe4afe0afe0ef8333d5b31dca",
+      "bytes": 5504
+    },
+    {
+      "path": "src/gallium/targets/osmesa/osmesa.sym",
+      "sha256": "5e06ffffb28f5178de21697f145f6774920c2aca4e04c1bdf195337fd6781cb1",
+      "bytes": 339
+    },
+    {
+      "path": "src/gallium/targets/osmesa/osmesa_target.c",
+      "sha256": "9b5851d4b6190afcd5774047c5b06d0504ae79ff47f9a17fbad425d3dbc0358b",
+      "bytes": 4609
+    },
+    {
+      "path": "src/gallium/targets/osmesa/test-render.cpp",
+      "sha256": "c487a7381d7c5cb59a26b051b44d14ef1977b8415618b08ba9d1e7ebb3ed27dc",
+      "bytes": 8671
+    },
+    {
+      "path": "src/redwood-drm/redwood_drm.c",
+      "sha256": "4e13a1006ce3285733b8bfcdeba9cf80e09da1548f2bd621d1b94c73b0338571",
+      "bytes": 15335
+    },
+    {
+      "path": "src/redwood-drm/test_surface_import.c",
+      "sha256": "9b96d8516f17925c034d25d94acce6c4ba091d163389490b9ebdcdaf9a3e9a5f",
+      "bytes": 1517
+    },
+    {
+      "path": "src/redwood-drm/xf86drm.h",
+      "sha256": "e901476b06564da364a0ddf2721856fd6ef19170d3c13af992a861d83c973581",
+      "bytes": 5392
+    },
+    {
+      "path": "src/util/cache_ops_aarch64.c",
+      "sha256": "1a7f31927e31b6ebc3cf29ffb77b48d5f7252385008c47fa71bc00a6c23ecd0c",
+      "bytes": 7871
+    },
+    {
+      "path": "src/util/meson.build",
+      "sha256": "262641f4d8167512c7163a417d0223980aef8fb8aff891d987ae1240c464f69e",
+      "bytes": 15056
+    }
+  ],
+  "excluded_generated_file_count": 24
+}

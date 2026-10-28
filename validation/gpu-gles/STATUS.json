@@ -1,0 +1,21 @@
+{
+  "ram_boot_started": true,
+  "phone_partition_writes": false,
+  "automatic_return_seconds": 0,
+  "hardware_acceleration_verified": true,
+  "payload_sha256": "5b5aea232042f9def30755665bba12b858e39df7e51c295e003f6bf316192cb0",
+  "battery_worker_started": true,
+  "slider_sensor_ready": true,
+  "panic_detected": false,
+  "user_confirmed_scrolling": true,
+  "user_confirmed_battery": true,
+  "user_confirmed_slider": true,
+  "all_seven_ios_cpus_running": true,
+  "battery_live_samples_verified": true,
+  "battery_charging_sample_verified": true,
+  "gpu_command_test_verified": true,
+  "sustained_stability_verified": false,
+  "performance_fps_measured": false,
+  "ram_only": true,
+  "raw_logs_in_repository": false
+}

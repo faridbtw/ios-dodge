@@ -1,0 +1,17 @@
+{
+  "kernel_native_build": "passed with restored local-only dependencies",
+  "kernel_build_sha256": "a23d44eefd68ec6e87e4e32484dc34c10edb99dd0626a1225e9e04d1f4f58579",
+  "mesa_patch_reconstruction": "passed:59 changed/new source file hashes",
+  "gles_bridge_native_compile": "passed against paired local Mesa binary and pinned SDK",
+  "display_commit_sanitizer_cases": 1187,
+  "live_reset_sanitizer_cases": 192,
+  "usb_reconnect_regressions": "passed",
+  "turtle_overlay_regressions": "passed",
+  "slider_regressions": "passed",
+  "battery_wire_regressions": "passed",
+  "phone_partitions_written": false,
+  "system_apfs_in_repository": false,
+  "firmware_in_repository": false,
+  "raw_logs_in_repository": false,
+  "phone_test_artifact_bit_identity_with_repository_build": false
+}

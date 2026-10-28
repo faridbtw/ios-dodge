@@ -1,0 +1,23 @@
+{
+  "ram_boot_started": true,
+  "phone_partition_writes": false,
+  "automatic_return_seconds": 0,
+  "hardware_acceleration_verified": true,
+  "payload_sha256": "56e2b211b28921de148cfc7446f67b5c49d0ca1e5276e7cfc214218db4e613b4",
+  "loader": "experimental/uefi-turtle/live-reset-v12/dodge-ios-uefi.img",
+  "loader_sha256": "40861c9e4258b30902fc806caad83a09d104001e3587434aabeb046d466c913b",
+  "battery_worker_started": true,
+  "slider_sensor_ready": true,
+  "panic_detected": false,
+  "preview_hook_installed": true,
+  "preview_capture_ready_count": 4,
+  "posterboard_abort_records": 0,
+  "catalog_timeout_count": 0,
+  "lock_screen_picker_enabled": false,
+  "wallpaper_user_confirmation_pending": false,
+  "user_confirmed_settings_wallpaper_selection": true,
+  "wallpaper_settings_fix_verified": true,
+  "lock_screen_picker_rendering_fixed": false,
+  "sustained_stability_verified": false,
+  "raw_logs_in_repository": false
+}

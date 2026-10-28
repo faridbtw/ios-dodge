@@ -1,0 +1,147 @@
+ios-dodge — OnePlus 13 iOS bug list
+Updated: 2026-10-28
+
+Applies to the current interactive iOS build:
+  UEFI: experimental/uefi-turtle/live-reset-v12/dodge-ios-uefi.img
+  Payload: experimental/display/anti-tear-v1/payload.bin
+  Seven iOS cores; Adreno830 Mesa26.2.5 GLES (gl=1); CPU0 serves firmware USB.
+
+Updated with live GPU/battery/slider testing and user confirmation on 2026-10-28.
+OPEN = confirmed incomplete/broken. PARTIAL = improved, with limitations.
+UNVERIFIED = not established; does not mean a confirmed failure.
+
+OPEN ISSUES
+
+GPU-01 — Adreno 830 hardware acceleration
+Status: HARDWARE RENDERING VERIFIED; long-term stability remains unverified.
+The integrated build reports CoreAnimation OpenGL ES3.2 Mesa26.2.5 Adreno830.
+GPU context/scratch completion tests passed, all seven CPUs joined, and three
+live captures show running with no panic. User confirmed scrolling works.
+The donor reported tearing; the current shadow/TE presentation build removed
+the horizontal split in user testing. Sustained stability still needs longer
+testing. Metal is disabled.
+
+WALLPAPER-01 — Wallpaper selection and previews
+Status: SETTINGS SELECTION VERIFIED; lock-screen picker unfinished.
+User can select wallpapers through Settings > Wallpaper > Add New Wallpaper.
+The native catalog services now run; catalog timeouts and Duet datavault
+failures are resolved. A scoped CoreGraphics preview replaces the Metal-only
+capture that aborted PosterBoard on a nil texture. Four previews were verified
+ready with no PosterBoard abort in the initial saved60s test; longer observation
+remains needed. Lock-screen long-press selection stays disabled to avoid its
+black hosted scene; its rendering still needs a separate fix.
+Evidence: diagnostics/20261028-wallpaper-picker-v3-reset/RESULT.json.
+
+DISPLAY-02 — Horizontal screen tearing after GPU enablement
+Status: FIX VERIFIED in current RAM build; user confirmed tearing is gone.
+The CPU scaler threads used to write bands straight into active scanout. The
+new driver composes a full frame in cached shadow RAM, waits for physical TE,
+and copies the finished frame serially. Queue release follows the copy.
+Panel TE period8290us; sampled copies ~1.2–2.9ms; no TE timeout. Read-only GPIO86
+monitoring, no display-register or panel-mode writes. This does not establish
+120FPS rendering or long-term stability. Source changes are isolated.
+Evidence: diagnostics/20261028-display-anti-tear-v1/RESULT.json.
+
+PERF-01 — UI lag and expensive visual effects
+Status: PARTIAL. High impact.
+The user reported severe scrolling lag with earlier configurations. Returning
+to the original compositor improved responsiveness. Removing only dock blur
+was insufficient. Mesa softpipe was slower in the user's tests. The current
+GLES build has verified Adreno acceleration and user-confirmed scrolling,
+but no measured frame-time/FPS result.
+Done when: scrolling and transitions have repeatable frame-time measurements
+and acceptable interaction in the selected build.
+
+WIFI-01 — Wi-Fi unavailable in iOS
+Status: OPEN. High impact.
+No working association, IP address or network traffic has been established.
+OnePlus 13 PCIe/MHI transport and device bring-up remain incomplete. The
+OnePlus 8 / ios-macan references do not provide a drop-in hardware driver.
+Done when: scan, connect, obtain an IP address, transfer data and reconnect
+work on the actual phone. Keep credentials and firmware out of the repository.
+
+AUDIO-01 — Speaker sound
+Status: OPEN; work PAUSED at the user's request. High impact.
+Amplifier identification, DSP graph setup and audio clock votes succeeded.
+Audible playback has not been validated. DMA/SMMU mapping and sample transfer
+remain unresolved. Microphone and other audio routes are also unverified.
+Sound resume details remain in the private local workspace.
+Done when: safe finite speaker playback is audible and reproducible; validate
+volume/mute separately. Do not resume audio diagnostics without the user asking.
+
+DISPLAY-01 — Smooth 120 FPS / 120 Hz iOS operation
+Status: UNVERIFIED / INCOMPLETE. The GLES integration does not establish 120 FPS.
+Earlier diagnostics measured panel TE near 120.6 Hz and a framebuffer timer
+near 120 Hz. UIKit remained at 60. Those measurements do not establish smooth
+120 FPS application rendering or a working 120 FPS interactive configuration.
+Done when: display timing and actual application presentation/frame times are
+verified together in a usable interactive build. User previously deprioritized
+120 FPS in favor of GPU work; this list does not restart that work.
+
+USB-01 — Live host access while iOS runs
+Status: WORKAROUND VERIFIED in the dedicated seven-core USB-service profile.
+CPU0 stays in firmware to serve fastboot; iOS uses the other seven cores.
+Live status/log downloads passed over 90 seconds, and access recovered after
+physical cable reconnection in the same session while iOS remained running.
+The user confirmed iOS, touch and battery work in this profile.
+This supplies firmware diagnostics; it does not supply an iOS SSH/file shell.
+The v12 UEFI also accepts fastboot reboot while live iOS owns touch. Android
+startup completed in22.7seconds after that command; no button input needed.
+The original eight-core build still lacks live USB access. Native USB with
+all eight iOS cores remains unfinished.
+Boot: tools/boot-op13-live-usb.py; see validation/live-usb/STATUS.json in the
+source checkout and experimental/usb-live/seven-core-v1/README.txt locally.
+
+WORKING / PREVIOUS ISSUES RESOLVED IN THE SELECTED BUILD
+
+- iOS starts; touch works.
+- All seven iOS cores joined in this GPU build; CPU0 handles firmware USB.
+  All eight cores were exercised in the earlier software-renderer build.
+- Wallpaper, icons and readable text are visible. Earlier black wallpaper
+  issues are not the recorded status of the selected build.
+- Battery fully working (user confirmed), including percentage, charging
+  indication and live unplug/replug updates.
+- Alert slider: bottom = ring, middle = silent, top = Do Not Disturb.
+  Silent Mode and Do Not Disturb were confirmed by the user.
+- Adreno830 hardware GLES rendering; user confirmed scrolling works.
+- UEFI: centered turtle, larger full-screen logs and stable scrolling overlay.
+- UEFI USB reconnect passed repeated physical cable cycles without rebooting.
+
+NOT YET VALIDATED AS COMPLETE FEATURES
+
+Camera, Bluetooth, cellular calls/data/SIM, GPS, microphone, full sensor
+coverage, suspend/resume and sustained thermal/power behavior need their own
+validation. Do not describe them as working or as confirmed broken from the
+current evidence alone.
+
+RAM-ONLY DESIGN
+
+Boot and staging use RAM. Persistent storage and installing/flashing iOS are
+not implemented in this workflow. State loss on reboot is expected here.
+Use fastboot boot only; do not flash or erase phone partitions.
+
+EVIDENCE / CHECKPOINTS
+
+Local port workspace:
+  QUICKSTART.txt
+  validation/gpu-gles/STATUS.json
+  validation/wallpaper/STATUS.json
+  validation/display/STATUS.json
+  diagnostics/20261028-gpu-integrated-v1/RESULT.json
+  diagnostics/20261025-gen8-bringup/STATUS.json
+  diagnostics/20261025-adreno120/STATUS.json
+  diagnostics/20261025-ui-lag/STATUS.json
+  diagnostics/20261025-wifi/STATUS.json
+  diagnostics/20261025-battery/STATUS.json
+  diagnostics/20261025-slider/STATUS.json
+
+Source repository:
+  README.md
+  validation/uefi/STATUS.json
+  validation/20261025-ui-lag/STATUS.json
+  validation/20261025-battery/STATUS.json
+  validation/alert-slider/STATUS.json
+
+Raw diagnostics and local-only checkpoints are not all present in the Git
+checkout. This bug list contains no system image, firmware or credentials.
+Arch/Linux/Windows experiments are outside this iOS bug list and remain paused.

@@ -2577,10 +2577,27 @@ op13_batt_adsp_init(void)
  PE_parse_boot_argn("loader_return_after", &return_after, sizeof(return_after));
  bool diagnostic = mode <= 3 && boot == 6 && cpus == 1 &&
      deadline >= (mode == 3 ? 90u : 30u) && deadline <= 120;
- bool interactive = mode == 4 && cpus == 8 && gl == 0 && boot == 0 &&
+ /* USB service profile reserves physical CPU0 for the firmware command loop.
+  * XNU boots on physical CPU6 and receives only the other seven CPUs in DT.
+  * No firmware battery calls are made; the native ADSP transport is unchanged.
+  */
+ uint32_t usb_live = 0;
+ PE_parse_boot_argn("op13_usb", &usb_live, sizeof(usb_live));
+ bool normal_profile = cpus == 8 && boot == 0 && usb_live == 0;
+ bool usb_profile = cpus == 7 && boot == 6 && usb_live == 1;
+ uint32_t gpu_stage = 0, gpu_keep = 0, gpu_return = 0;
+ PE_parse_boot_argn("adreno8", &gpu_stage, sizeof(gpu_stage));
+ PE_parse_boot_argn("adreno8_keep", &gpu_keep, sizeof(gpu_keep));
+ PE_parse_boot_argn("adreno8_return", &gpu_return, sizeof(gpu_return));
+ /* Isolated GLES profile retains CPU0 for firmware USB, as the v3 donor.
+  * The native battery transport does not use the GPU's separate SMMU.
+  */
+ bool gles_profile = cpus == 7 && boot == 1 && usb_live == 1 && gl == 1 &&
+     gpu_stage == 23 && gpu_keep == 1 && gpu_return == 0;
+ bool interactive = mode == 4 && (((normal_profile || usb_profile) && gl == 0) || gles_profile) &&
      deadline == 0 && return_after == 0;
  if (!diagnostic && !interactive) {
-  printf("op13-battery: require timed CPU6 diagnostic or eight-core gl=0 interactive RAM boot\n");
+  printf("op13-battery: require timed CPU6 diagnostic or matched interactive RAM profile\n");
   mode = 0; return;
  }
  new_from = ~0u;

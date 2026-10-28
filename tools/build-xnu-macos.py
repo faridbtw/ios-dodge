@@ -24,10 +24,16 @@ def run(*args, **kwargs):
 
 
 def main():
+    global SOURCE, WORK, DEPS
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('action', choices=['export', 'libs', 'build'])
     parser.add_argument('-j', type=int, default=6)
+    parser.add_argument('--source', type=Path, default=SOURCE)
+    parser.add_argument('--work', type=Path, default=WORK)
+    parser.add_argument('--deps', type=Path, default=DEPS)
     args = parser.parse_args()
+    SOURCE, WORK, DEPS = args.source.resolve(), args.work.resolve(), args.deps.resolve()
+    WORK.mkdir(parents=True, exist_ok=True)
     sdk_source = DEPS / 'ios-sdks/iPhoneOS16.5.sdk'
     required = [sdk_source / 'usr/include', DEPS / 'MacOSX13.3.sdk/System/Library/Frameworks/Kernel.framework/Headers/DriverKit',
         DEPS / 'AvailabilityVersions/availability.pl', DEPS / 'libdispatch/os/firehose_buffer_private.h',

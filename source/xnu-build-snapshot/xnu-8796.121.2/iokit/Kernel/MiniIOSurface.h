@@ -156,6 +156,8 @@ public:
  * A surface found or made here is held until MiniIOSurfaceDrop().
  */
 MiniIOSurface * MiniIOSurfaceCopy(uint32_t sid);
+/* A held surface whose full pixel allocation has the same pinned physical pages. */
+MiniIOSurface * MiniIOSurfaceCopyWithBacking(IOMemoryDescriptor * memory, uint64_t bytes);
 /*
  * What making and freeing surfaces has cost since this was last asked: how many, microseconds
  * each; how many got memory that was kept from one before.

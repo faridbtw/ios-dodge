@@ -1,0 +1,19 @@
+{
+  "live_usb_observed": true,
+  "samples": 18,
+  "requested_ios_cpu_count": 7,
+  "firmware_usb_cpu": 0,
+  "phone_partition_writes": false,
+  "ios_ui_confirmed": true,
+  "touch_user_confirmed": true,
+  "battery_ui_confirmed": true,
+  "physical_cable_reconnect_passed": true,
+  "same_session_after_reconnect": true,
+  "firmware_live_log_download_after_reconnect": true,
+  "access_type": "Firmware fastboot diagnostics/live kernel log, not an iOS SSH or filesystem shell",
+  "native_eight_core_usb_fixed": false,
+  "native_kernel_build": "passed",
+  "all_ramdisk_entries_unchanged": true,
+  "hardware_acceleration": false,
+  "raw_logs_in_repository": false
+}

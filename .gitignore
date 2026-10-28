@@ -32,3 +32,9 @@ venv/
 /diagnostics/20261025-battery/*
 !/diagnostics/20261025-battery/oplus_hal_adsp.c
 !/diagnostics/20261025-battery/oplus_hal_adsp.h
+
+# Source-only updates: archives, kernels and private diagnostic output stay local.
+*.7z
+*.macho
+*.log
+*.private.*
