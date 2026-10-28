@@ -32,7 +32,7 @@
     <g font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif">
       <circle cx="57" cy="54" r="4" fill="#ff666d"/>
       <text x="71" y="59" font-size="12" font-weight="600" letter-spacing="2.5" fill="#c4b0b1">EXPERIMENTAL · RAM ONLY</text>
-      <text x="50" y="159" font-size="82" font-weight="750" letter-spacing="-4" fill="#fbf5f5">ios-dodge<tspan fill="#ff666d">.</tspan></text>
+      <text x="50" y="159" font-size="82" font-weight="750" letter-spacing="-4" fill="#fbf5f5">ios-dodge</text>
       <text x="54" y="204" font-size="23" letter-spacing="-.3" fill="#d0bfc0">iOS on OnePlus 13.</text>
       <text x="54" y="235" font-size="15" fill="#ab8e90">XNU · Adreno 830 · Custom UEFI</text>
       <g transform="translate(54 276)" font-size="12" font-weight="600">
