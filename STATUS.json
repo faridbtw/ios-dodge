@@ -1,0 +1,68 @@
+{
+  "updated": "2026-10-28",
+  "project": "ios-dodge",
+  "device": "OnePlus 13 / SM8750 / dodge",
+  "ram_only": true,
+  "phone_partition_writes": false,
+  "selected_build": {
+    "uefi": "experimental/uefi-turtle/live-reset-v12/dodge-ios-uefi.img",
+    "uefi_sha256": "40861c9e4258b30902fc806caad83a09d104001e3587434aabeb046d466c913b",
+    "payload": "experimental/display/anti-tear-v1/payload.bin",
+    "payload_sha256": "ff260d0b8ad877c9cbee0d4d9709132a6cd17e8b1fe8f394533811e67bc9991c",
+    "renderer": "Adreno 830 / Mesa 26.2.5 / GLES 3.2",
+    "ios_cores": 7,
+    "firmware_usb_cpu": 0,
+    "metal_enabled": false,
+    "artifacts_in_repository": false,
+    "framebuffer_advertised_hz": 60
+  },
+  "verified": [
+    "iOS boot and touch",
+    "Adreno hardware GLES rendering",
+    "horizontal tearing resolved in user testing",
+    "Settings wallpaper selection and scoped preview capture",
+    "live battery percentage and charging updates",
+    "alert slider ring/silent/Do Not Disturb",
+    "seven-core firmware USB diagnostics",
+    "live USB cold reboot to Android",
+    "centered turtle and larger console logs"
+  ],
+  "open_issue_ids": [
+    "WIFI-01",
+    "AUDIO-01",
+    "WALLPAPER-02",
+    "GPU-02",
+    "USB-02"
+  ],
+  "unverified_issue_ids": [
+    "PERF-01",
+    "DISPLAY-01"
+  ],
+  "audio_work": "paused",
+  "lock_screen_picker_enabled": false,
+  "native_eight_core_usb_verified": false,
+  "application_120fps_verified": false,
+  "sustained_stability_verified": false,
+  "last_requested_phone_handoff": {
+    "os": "Android",
+    "startup_confirmed": true,
+    "note": "Latest user-requested reboot completed; this records the handoff, not continuous device monitoring."
+  },
+  "evidence": [
+    "validation/gpu-gles/STATUS.json",
+    "validation/display/STATUS.json",
+    "validation/wallpaper/STATUS.json",
+    "validation/live-usb/STATUS.json",
+    "validation/uefi/live-reset/STATUS.json",
+    "validation/20261028-source-checks.json"
+  ],
+  "display_observations": {
+    "panel_te_period_us": 8290,
+    "final_copy_min_us": 1110,
+    "final_copy_max_us": 2943,
+    "saved_commit_samples": 13,
+    "te_timeouts_reported": 0,
+    "user_confirmed_horizontal_tearing_gone": true,
+    "application_fps_measured": false
+  }
+}

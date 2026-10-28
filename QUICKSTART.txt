@@ -19,8 +19,8 @@ The v12 UEFI also accepts cold reboot during an active iOS touch lease.
 
 Screen tearing: frames are now composed off-screen and copied to scanout
 after the physical panel TE edge. User confirmed horizontal tearing is gone
-and scrolling is usable. Observed TE period8290us (~120.6Hz), final-copy
-samples ~1.2–2.9ms, no TE timeout. This is not a120FPS application claim.
+and scrolling is usable. Observed TE period 8,290 us (~120.6 Hz), final-copy
+samples 1.1–2.9 ms, no TE timeout. Application rendering at 120 FPS remains unverified.
 Working wallpaper-only GPU fallback: experimental/wallpaper/picker-v3-guarded/payload.bin.
 Display source/build/validation: validation/display/ and tools/test-op13-display-commit.py.
 
@@ -48,7 +48,7 @@ With v12 loaded, return to Android from live seven-core iOS with:
 
 fastboot -s xnuloader reboot
 
-This was tested: Android completed startup in about23 seconds. A physical
+This was tested: Android completed startup in about 23 seconds. A physical
 restart is only needed if USB/firmware itself is unresponsive. Do not use oem
 stop to reuse GPU memory. Ordinary reset is separate from touch cleanup.
 
@@ -93,3 +93,5 @@ fastboot -s xnuloader get_staged ios-live.log
 Source-only checkout: recreate the local payload with
  tools/make-op13-live-usb-payload.py and your locally built matching kernel.
 Boot images, system.apfs, calibration and raw logs are not included in Git.
+
+Current status summary: STATUS.json. Remaining issues: BUGLIST.txt.

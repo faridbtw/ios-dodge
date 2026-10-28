@@ -11,7 +11,7 @@ Experimental iOS16.5 /20F66 RAM port for **OnePlus13 (`dodge`, SM8750)**. This p
 - Seven iOS cores run while CPU0 serves firmware USB diagnostics. The earlier eight-core software-renderer profile remains a fallback.
 - Centered turtle, larger full-screen logs and USB reconnect code are retained. The v12 UEFI now accepts `fastboot -s xnuloader reboot` while iOS owns touch; Android startup completed in22.7seconds during testing.
 
-Wi-Fi and sound remain unfinished; sound work is paused. Long-term stability, full sensor/camera/radio support and120FPS need further validation. See [BUGLIST.txt](BUGLIST.txt).
+Wi-Fi and sound remain unfinished; sound work is paused. Long-term stability, full sensor/camera/radio support and120FPS need further validation. See [BUGLIST.txt](BUGLIST.txt) for remaining issues and [STATUS.json](STATUS.json) for the current build and validation summary.
 
 ## Source layout
 
