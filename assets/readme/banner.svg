@@ -1,21 +1,21 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="1120" height="360" viewBox="0 0 1120 360" role="img" aria-labelledby="title desc">
   <title id="title">ios-dodge</title>
-  <desc id="desc">An experimental iOS port for OnePlus 13. A white turtle on a dark background with mint accents.</desc>
+  <desc id="desc">An experimental iOS port for OnePlus 13. A white turtle on a dark background with red accents.</desc>
   <defs>
     <linearGradient id="background" x2="1" y2="1">
-      <stop stop-color="#0d161b"/>
-      <stop offset="1" stop-color="#070c10"/>
+      <stop stop-color="#160e12"/>
+      <stop offset="1" stop-color="#10090c"/>
     </linearGradient>
     <radialGradient id="halo">
-      <stop stop-color="#65e3b1" stop-opacity=".13"/>
-      <stop offset="1" stop-color="#65e3b1" stop-opacity="0"/>
+      <stop stop-color="#ef4444" stop-opacity=".13"/>
+      <stop offset="1" stop-color="#ef4444" stop-opacity="0"/>
     </radialGradient>
     <linearGradient id="shell" x2=".7" y2="1">
-      <stop stop-color="#f2fff9"/>
-      <stop offset="1" stop-color="#b3e7d5"/>
+      <stop stop-color="#fff7f7"/>
+      <stop offset="1" stop-color="#ecc4c6"/>
     </linearGradient>
     <pattern id="grid" width="40" height="40" patternUnits="userSpaceOnUse">
-      <path d="M40 0H0V40" fill="none" stroke="#8cc2b1" stroke-opacity=".045"/>
+      <path d="M40 0H0V40" fill="none" stroke="#c99194" stroke-opacity=".045"/>
     </pattern>
     <clipPath id="bounds"><rect width="1120" height="360" rx="24"/></clipPath>
   </defs>
@@ -23,25 +23,25 @@
     <rect width="1120" height="360" fill="url(#background)"/>
     <rect width="1120" height="360" fill="url(#grid)"/>
     <ellipse cx="884" cy="175" rx="260" ry="250" fill="url(#halo)"/>
-    <path d="M0 359H1120" stroke="#65e3b1" stroke-opacity=".25"/>
-    <g fill="none" stroke="#65e3b1">
+    <path d="M0 359H1120" stroke="#ef4444" stroke-opacity=".25"/>
+    <g fill="none" stroke="#ef4444">
       <circle cx="895" cy="180" r="128" stroke-opacity=".13"/>
       <circle cx="895" cy="180" r="149" stroke-opacity=".065" stroke-dasharray="3 9"/>
       <path d="M744 180h9m284 0h9M895 29v9m0 284v9" stroke-opacity=".35"/>
     </g>
     <g font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif">
-      <circle cx="57" cy="54" r="4" fill="#78e9bb"/>
-      <text x="71" y="59" font-size="12" font-weight="600" letter-spacing="2.5" fill="#a3bdb6">EXPERIMENTAL · RAM ONLY</text>
-      <text x="50" y="159" font-size="82" font-weight="750" letter-spacing="-4" fill="#f0f8f5">ios-dodge<tspan fill="#78e9bb">.</tspan></text>
-      <text x="54" y="204" font-size="23" letter-spacing="-.3" fill="#b6c9c3">iOS on OnePlus 13.</text>
-      <text x="54" y="235" font-size="15" fill="#7f9990">XNU · Adreno 830 · Custom UEFI</text>
+      <circle cx="57" cy="54" r="4" fill="#ff666d"/>
+      <text x="71" y="59" font-size="12" font-weight="600" letter-spacing="2.5" fill="#c4b0b1">EXPERIMENTAL · RAM ONLY</text>
+      <text x="50" y="159" font-size="82" font-weight="750" letter-spacing="-4" fill="#fbf5f5">ios-dodge<tspan fill="#ff666d">.</tspan></text>
+      <text x="54" y="204" font-size="23" letter-spacing="-.3" fill="#d0bfc0">iOS on OnePlus 13.</text>
+      <text x="54" y="235" font-size="15" fill="#ab8e90">XNU · Adreno 830 · Custom UEFI</text>
       <g transform="translate(54 276)" font-size="12" font-weight="600">
-        <rect width="97" height="31" rx="8" fill="#14251f" stroke="#29473b"/>
-        <text x="48.5" y="20" text-anchor="middle" fill="#9ce8c8">iOS 16.5</text>
-        <rect x="108" width="109" height="31" rx="8" fill="#101c20" stroke="#263a3c"/>
-        <text x="162.5" y="20" text-anchor="middle" fill="#b8cdc7">SM8750</text>
-        <rect x="228" width="119" height="31" rx="8" fill="#101c20" stroke="#263a3c"/>
-        <text x="287.5" y="20" text-anchor="middle" fill="#b8cdc7">GLES 3.2</text>
+        <rect width="97" height="31" rx="8" fill="#29161a" stroke="#593036"/>
+        <text x="48.5" y="20" text-anchor="middle" fill="#ffaaaa">iOS 16.5</text>
+        <rect x="108" width="109" height="31" rx="8" fill="#1d1418" stroke="#423036"/>
+        <text x="162.5" y="20" text-anchor="middle" fill="#d3c0c3">SM8750</text>
+        <rect x="228" width="119" height="31" rx="8" fill="#1d1418" stroke="#423036"/>
+        <text x="287.5" y="20" text-anchor="middle" fill="#d3c0c3">GLES 3.2</text>
       </g>
     </g>
     <!-- Vector interpretation of the project's existing turtle boot artwork. -->
@@ -59,6 +59,6 @@
       <path d="M55 188L76 205L49 229C34 213 41 195 55 188Z"/>
       <path d="M145 188L124 205L151 229C166 213 159 195 145 188Z"/>
     </g>
-    <rect x=".5" y=".5" width="1119" height="359" rx="23.5" fill="none" stroke="#294038" stroke-opacity=".6"/>
+    <rect x=".5" y=".5" width="1119" height="359" rx="23.5" fill="none" stroke="#4c2c33" stroke-opacity=".6"/>
   </g>
 </svg>
