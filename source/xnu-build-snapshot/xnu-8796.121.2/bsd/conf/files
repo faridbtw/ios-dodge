@@ -665,3 +665,6 @@ bsd/dev/k90_oneplus_gpu.c	standard
 bsd/dev/redwood_gpu_dispatch.c	standard
 
 bsd/dev/op13_screen.c		standard
+
+bsd/dev/op13wifi/mhi_host.c standard
+bsd/dev/op13wifi/op13_peach_transport.c standard

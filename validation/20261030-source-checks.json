@@ -1,0 +1,12 @@
+{
+  "updated": "2026-10-30",
+  "published_uefi_source_build_passed": true,
+  "uefi_pe_bytes": 269312,
+  "wake_helper_asan_ubsan_passed": true,
+  "pci_window_asan_ubsan_passed": true,
+  "qrtr_wire_asan_ubsan_passed": true,
+  "boot_helpers_python_compile_passed": true,
+  "upstream_patch_context_whitespace_retained": true,
+  "device_evidence": "validation/wifi/STATUS.json",
+  "system_images_and_firmware_published": false
+}

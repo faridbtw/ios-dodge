@@ -1,0 +1,809 @@
+{
+  "files_compared": 106,
+  "common_numeric_definitions": 13847,
+  "files_with_mismatch": [
+    {
+      "file": "uniform_descriptor_header.h",
+      "common": 17,
+      "mismatches": {
+        "UNIFORM_DESCRIPTOR_HEADER_RESERVED_0A_LSB": [
+          28,
+          8
+        ]
+      },
+      "peach_only": 0,
+      "qcc_only": 0
+    },
+    {
+      "file": "wcss_version.h",
+      "common": 1,
+      "mismatches": {
+        "WCSS_VERSION": [
+          2576,
+          2724
+        ]
+      },
+      "peach_only": 0,
+      "qcc_only": 0
+    },
+    {
+      "file": "wcss_seq_hwiobase.h",
+      "common": 63,
+      "mismatches": {
+        "DBG_BASE_PHYS": [
+          16777216,
+          12582912
+        ],
+        "DBG_BASE": [
+          16777216,
+          12582912
+        ]
+      },
+      "peach_only": 6,
+      "qcc_only": 3
+    }
+  ],
+  "all_files": [
+    {
+      "file": "he_sig_b2_ofdma_info.h",
+      "common": 45,
+      "mismatches": {},
+      "peach_only": 0,
+      "qcc_only": 0
+    },
+    {
+      "file": "phyrx_pkt_end_info.h",
+      "common": 321,
+      "mismatches": {},
+      "peach_only": 0,
+      "qcc_only": 0
+    },
+    {
+      "file": "rx_timing_info.h",
+      "common": 25,
+      "mismatches": {},
+      "peach_only": 0,
+      "qcc_only": 0
+    },
+    {
+      "file": "rx_location_info.h",
+      "common": 253,
+      "mismatches": {},
+      "peach_only": 0,
+      "qcc_only": 0
+    },
+    {
+      "file": "phyrx_vht_sig_a.h",
+      "common": 73,
+      "mismatches": {},
+      "peach_only": 0,
+      "qcc_only": 0
+    },
+    {
+      "file": "wbm_release_ring_rx.h",
+      "common": 193,
+      "mismatches": {},
+      "peach_only": 0,
+      "qcc_only": 0
+    },
+    {
+      "file": "phyrx_pkt_end.h",
+      "common": 321,
+      "mismatches": {},
+      "peach_only": 0,
+      "qcc_only": 0
+    },
+    {
+      "file": "rx_ppdu_end_user_stats.h",
+      "common": 397,
+      "mismatches": {},
+      "peach_only": 0,
+      "qcc_only": 0
+    },
+    {
+      "file": "wbm2sw_completion_ring_tx.h",
+      "common": 141,
+      "mismatches": {},
+      "peach_only": 0,
+      "qcc_only": 0
+    },
+    {
+      "file": "rx_ppdu_end_user_stats_ext.h",
+      "common": 77,
+      "mismatches": {},
+      "peach_only": 0,
+      "qcc_only": 0
+    },
+    {
+      "file": "phyrx_l_sig_b.h",
+      "common": 17,
+      "mismatches": {},
+      "peach_only": 0,
+      "qcc_only": 0
+    },
+    {
+      "file": "uniform_descriptor_header.h",
+      "common": 17,
+      "mismatches": {
+        "UNIFORM_DESCRIPTOR_HEADER_RESERVED_0A_LSB": [
+          28,
+          8
+        ]
+      },
+      "peach_only": 0,
+      "qcc_only": 0
+    },
+    {
+      "file": "rx_reo_queue_ext.h",
+      "common": 261,
+      "mismatches": {},
+      "peach_only": 0,
+      "qcc_only": 0
+    },
+    {
+      "file": "rx_msdu_link.h",
+      "common": 685,
+      "mismatches": {},
+      "peach_only": 0,
+      "qcc_only": 0
+    },
+    {
+      "file": "phyrx_he_sig_b1_mu.h",
+      "common": 13,
+      "mismatches": {},
+      "peach_only": 0,
+      "qcc_only": 0
+    },
+    {
+      "file": "rx_mpdu_link_ptr.h",
+      "common": 17,
+      "mismatches": {},
+      "peach_only": 0,
+      "qcc_only": 0
+    },
+    {
+      "file": "rx_msdu_details.h",
+      "common": 109,
+      "mismatches": {},
+      "peach_only": 0,
+      "qcc_only": 0
+    },
+    {
+      "file": "phyrx_user_info.h",
+      "common": 137,
+      "mismatches": {},
+      "peach_only": 0,
+      "qcc_only": 0
+    },
+    {
+      "file": "tlv_hdr.h",
+      "common": 14,
+      "mismatches": {},
+      "peach_only": 0,
+      "qcc_only": 0
+    },
+    {
+      "file": "reo_flush_queue_status.h",
+      "common": 129,
+      "mismatches": {},
+      "peach_only": 0,
+      "qcc_only": 0
+    },
+    {
+      "file": "phyrx_ht_sig.h",
+      "common": 65,
+      "mismatches": {},
+      "peach_only": 0,
+      "qcc_only": 0
+    },
+    {
+      "file": "wbm_release_ring.h",
+      "common": 61,
+      "mismatches": {},
+      "peach_only": 0,
+      "qcc_only": 0
+    },
+    {
+      "file": "HALhwio.h",
+      "common": 0,
+      "mismatches": {},
+      "peach_only": 0,
+      "qcc_only": 0
+    },
+    {
+      "file": "reo_flush_queue.h",
+      "common": 57,
+      "mismatches": {},
+      "peach_only": 0,
+      "qcc_only": 0
+    },
+    {
+      "file": "rx_mpdu_details.h",
+      "common": 65,
+      "mismatches": {},
+      "peach_only": 0,
+      "qcc_only": 0
+    },
+    {
+      "file": "rx_ppdu_start.h",
+      "common": 29,
+      "mismatches": {},
+      "peach_only": 0,
+      "qcc_only": 0
+    },
+    {
+      "file": "receive_user_info.h",
+      "common": 137,
+      "mismatches": {},
+      "peach_only": 0,
+      "qcc_only": 0
+    },
+    {
+      "file": "reo_entrance_ring.h",
+      "common": 145,
+      "mismatches": {},
+      "peach_only": 0,
+      "qcc_only": 0
+    },
+    {
+      "file": "uniform_reo_status_header.h",
+      "common": 21,
+      "mismatches": {},
+      "peach_only": 0,
+      "qcc_only": 0
+    },
+    {
+      "file": "wcss_version.h",
+      "common": 1,
+      "mismatches": {
+        "WCSS_VERSION": [
+          2576,
+          2724
+        ]
+      },
+      "peach_only": 0,
+      "qcc_only": 0
+    },
+    {
+      "file": "reo_descriptor_threshold_reached_status.h",
+      "common": 145,
+      "mismatches": {},
+      "peach_only": 0,
+      "qcc_only": 0
+    },
+    {
+      "file": "rxpcu_ppdu_end_info.h",
+      "common": 533,
+      "mismatches": {},
+      "peach_only": 0,
+      "qcc_only": 0
+    },
+    {
+      "file": "l_sig_a_info.h",
+      "common": 37,
+      "mismatches": {},
+      "peach_only": 0,
+      "qcc_only": 0
+    },
+    {
+      "file": "phyrx_l_sig_a.h",
+      "common": 37,
+      "mismatches": {},
+      "peach_only": 0,
+      "qcc_only": 0
+    },
+    {
+      "file": "reo_flush_timeout_list_status.h",
+      "common": 137,
+      "mismatches": {},
+      "peach_only": 0,
+      "qcc_only": 0
+    },
+    {
+      "file": "reo_unblock_cache_status.h",
+      "common": 133,
+      "mismatches": {},
+      "peach_only": 0,
+      "qcc_only": 0
+    },
+    {
+      "file": "rxpcu_ppdu_end_layout_info.h",
+      "common": 173,
+      "mismatches": {},
+      "peach_only": 0,
+      "qcc_only": 0
+    },
+    {
+      "file": "reo_update_rx_reo_queue_status.h",
+      "common": 125,
+      "mismatches": {},
+      "peach_only": 0,
+      "qcc_only": 0
+    },
+    {
+      "file": "HALcomdef.h",
+      "common": 0,
+      "mismatches": {},
+      "peach_only": 0,
+      "qcc_only": 0
+    },
+    {
+      "file": "rx_ppdu_start_user_info.h",
+      "common": 137,
+      "mismatches": {},
+      "peach_only": 0,
+      "qcc_only": 0
+    },
+    {
+      "file": "rx_msdu_start.h",
+      "common": 161,
+      "mismatches": {},
+      "peach_only": 0,
+      "qcc_only": 0
+    },
+    {
+      "file": "ht_sig_info.h",
+      "common": 65,
+      "mismatches": {},
+      "peach_only": 0,
+      "qcc_only": 0
+    },
+    {
+      "file": "rx_rxpcu_classification_overview.h",
+      "common": 45,
+      "mismatches": {},
+      "peach_only": 0,
+      "qcc_only": 0
+    },
+    {
+      "file": "reo_destination_ring_with_pn.h",
+      "common": 137,
+      "mismatches": {},
+      "peach_only": 0,
+      "qcc_only": 0
+    },
+    {
+      "file": "he_sig_b2_mu_info.h",
+      "common": 45,
+      "mismatches": {},
+      "peach_only": 0,
+      "qcc_only": 0
+    },
+    {
+      "file": "he_sig_a_mu_dl_info.h",
+      "common": 89,
+      "mismatches": {},
+      "peach_only": 0,
+      "qcc_only": 0
+    },
+    {
+      "file": "phyrx_he_sig_a_su.h",
+      "common": 109,
+      "mismatches": {},
+      "peach_only": 0,
+      "qcc_only": 0
+    },
+    {
+      "file": "receive_pkt_start_info.h",
+      "common": 41,
+      "mismatches": {},
+      "peach_only": 0,
+      "qcc_only": 0
+    },
+    {
+      "file": "phyrx_he_sig_a_mu_ul.h",
+      "common": 49,
+      "mismatches": {},
+      "peach_only": 0,
+      "qcc_only": 0
+    },
+    {
+      "file": "rx_reo_queue.h",
+      "common": 281,
+      "mismatches": {},
+      "peach_only": 0,
+      "qcc_only": 0
+    },
+    {
+      "file": "rx_attention.h",
+      "common": 201,
+      "mismatches": {},
+      "peach_only": 0,
+      "qcc_only": 0
+    },
+    {
+      "file": "rx_msdu_ext_desc_info.h",
+      "common": 25,
+      "mismatches": {},
+      "peach_only": 0,
+      "qcc_only": 0
+    },
+    {
+      "file": "reo_destination_ring.h",
+      "common": 173,
+      "mismatches": {},
+      "peach_only": 0,
+      "qcc_only": 0
+    },
+    {
+      "file": "msmhwiobase.h",
+      "common": 0,
+      "mismatches": {},
+      "peach_only": 126,
+      "qcc_only": 93
+    },
+    {
+      "file": "rx_msdu_end.h",
+      "common": 609,
+      "mismatches": {},
+      "peach_only": 0,
+      "qcc_only": 0
+    },
+    {
+      "file": "com_dtypes.h",
+      "common": 5,
+      "mismatches": {},
+      "peach_only": 0,
+      "qcc_only": 0
+    },
+    {
+      "file": "beryllium_top_reg.h",
+      "common": 2,
+      "mismatches": {},
+      "peach_only": 0,
+      "qcc_only": 0
+    },
+    {
+      "file": "phyrx_common_user_info.h",
+      "common": 85,
+      "mismatches": {},
+      "peach_only": 0,
+      "qcc_only": 0
+    },
+    {
+      "file": "rx_mpdu_info.h",
+      "common": 469,
+      "mismatches": {},
+      "peach_only": 0,
+      "qcc_only": 0
+    },
+    {
+      "file": "phyrx_location.h",
+      "common": 253,
+      "mismatches": {},
+      "peach_only": 0,
+      "qcc_only": 0
+    },
+    {
+      "file": "tcl_data_cmd.h",
+      "common": 153,
+      "mismatches": {},
+      "peach_only": 0,
+      "qcc_only": 0
+    },
+    {
+      "file": "rxpt_classify_info.h",
+      "common": 61,
+      "mismatches": {},
+      "peach_only": 0,
+      "qcc_only": 0
+    },
+    {
+      "file": "ce_stat_desc.h",
+      "common": 57,
+      "mismatches": {},
+      "peach_only": 0,
+      "qcc_only": 0
+    },
+    {
+      "file": "rx_mpdu_start.h",
+      "common": 469,
+      "mismatches": {},
+      "peach_only": 0,
+      "qcc_only": 0
+    },
+    {
+      "file": "reo_flush_cache_status.h",
+      "common": 161,
+      "mismatches": {},
+      "peach_only": 0,
+      "qcc_only": 0
+    },
+    {
+      "file": "uniform_reo_cmd_header.h",
+      "common": 13,
+      "mismatches": {},
+      "peach_only": 0,
+      "qcc_only": 0
+    },
+    {
+      "file": "vht_sig_a_info.h",
+      "common": 73,
+      "mismatches": {},
+      "peach_only": 0,
+      "qcc_only": 0
+    },
+    {
+      "file": "he_sig_a_su_info.h",
+      "common": 109,
+      "mismatches": {},
+      "peach_only": 0,
+      "qcc_only": 0
+    },
+    {
+      "file": "wbm_buffer_ring.h",
+      "common": 17,
+      "mismatches": {},
+      "peach_only": 0,
+      "qcc_only": 0
+    },
+    {
+      "file": "he_sig_a_mu_ul_info.h",
+      "common": 49,
+      "mismatches": {},
+      "peach_only": 0,
+      "qcc_only": 0
+    },
+    {
+      "file": "he_sig_b1_mu_info.h",
+      "common": 13,
+      "mismatches": {},
+      "peach_only": 0,
+      "qcc_only": 0
+    },
+    {
+      "file": "tcl_gse_cmd.h",
+      "common": 73,
+      "mismatches": {},
+      "peach_only": 0,
+      "qcc_only": 0
+    },
+    {
+      "file": "reo_unblock_cache.h",
+      "common": 53,
+      "mismatches": {},
+      "peach_only": 0,
+      "qcc_only": 0
+    },
+    {
+      "file": "phyrx_he_sig_b2_mu.h",
+      "common": 45,
+      "mismatches": {},
+      "peach_only": 0,
+      "qcc_only": 0
+    },
+    {
+      "file": "rx_flow_search_entry.h",
+      "common": 113,
+      "mismatches": {},
+      "peach_only": 0,
+      "qcc_only": 0
+    },
+    {
+      "file": "tcl_status_ring.h",
+      "common": 65,
+      "mismatches": {},
+      "peach_only": 0,
+      "qcc_only": 0
+    },
+    {
+      "file": "rx_mpdu_end.h",
+      "common": 93,
+      "mismatches": {},
+      "peach_only": 0,
+      "qcc_only": 0
+    },
+    {
+      "file": "wbm_release_ring_tx.h",
+      "common": 153,
+      "mismatches": {},
+      "peach_only": 0,
+      "qcc_only": 0
+    },
+    {
+      "file": "phytx_pkt_end.h",
+      "common": 122,
+      "mismatches": {},
+      "peach_only": 0,
+      "qcc_only": 0
+    },
+    {
+      "file": "phyrx_he_sig_a_mu_dl.h",
+      "common": 89,
+      "mismatches": {},
+      "peach_only": 0,
+      "qcc_only": 0
+    },
+    {
+      "file": "ce_src_desc.h",
+      "common": 61,
+      "mismatches": {},
+      "peach_only": 0,
+      "qcc_only": 0
+    },
+    {
+      "file": "wbm2sw_completion_ring_rx.h",
+      "common": 185,
+      "mismatches": {},
+      "peach_only": 0,
+      "qcc_only": 0
+    },
+    {
+      "file": "tx_rate_stats_info.h",
+      "common": 45,
+      "mismatches": {},
+      "peach_only": 0,
+      "qcc_only": 0
+    },
+    {
+      "file": "wcss_seq_hwiobase.h",
+      "common": 63,
+      "mismatches": {
+        "DBG_BASE_PHYS": [
+          16777216,
+          12582912
+        ],
+        "DBG_BASE": [
+          16777216,
+          12582912
+        ]
+      },
+      "peach_only": 6,
+      "qcc_only": 3
+    },
+    {
+      "file": "receive_rssi_info.h",
+      "common": 257,
+      "mismatches": {},
+      "peach_only": 0,
+      "qcc_only": 0
+    },
+    {
+      "file": "rx_mpdu_desc_info.h",
+      "common": 49,
+      "mismatches": {},
+      "peach_only": 0,
+      "qcc_only": 0
+    },
+    {
+      "file": "phyrx_other_receive_info_ru_details.h",
+      "common": 13,
+      "mismatches": {},
+      "peach_only": 0,
+      "qcc_only": 0
+    },
+    {
+      "file": "tlv_tag_def.h",
+      "common": 0,
+      "mismatches": {},
+      "peach_only": 0,
+      "qcc_only": 0
+    },
+    {
+      "file": "macrx_abort_request_info.h",
+      "common": 9,
+      "mismatches": {},
+      "peach_only": 0,
+      "qcc_only": 0
+    },
+    {
+      "file": "wcss_seq_hwioreg_umac.h",
+      "common": 1345,
+      "mismatches": {},
+      "peach_only": 8,
+      "qcc_only": 360
+    },
+    {
+      "file": "seq_hwio.h",
+      "common": 0,
+      "mismatches": {},
+      "peach_only": 0,
+      "qcc_only": 0
+    },
+    {
+      "file": "rx_reo_queue_1k.h",
+      "common": 141,
+      "mismatches": {},
+      "peach_only": 0,
+      "qcc_only": 0
+    },
+    {
+      "file": "reo_get_queue_stats.h",
+      "common": 53,
+      "mismatches": {},
+      "peach_only": 0,
+      "qcc_only": 0
+    },
+    {
+      "file": "phyrx_rssi_legacy.h",
+      "common": 561,
+      "mismatches": {},
+      "peach_only": 40,
+      "qcc_only": 40
+    },
+    {
+      "file": "rx_msdu_desc_info.h",
+      "common": 65,
+      "mismatches": {},
+      "peach_only": 0,
+      "qcc_only": 0
+    },
+    {
+      "file": "reo_flush_cache.h",
+      "common": 77,
+      "mismatches": {},
+      "peach_only": 0,
+      "qcc_only": 0
+    },
+    {
+      "file": "reo_get_queue_stats_status.h",
+      "common": 173,
+      "mismatches": {},
+      "peach_only": 0,
+      "qcc_only": 0
+    },
+    {
+      "file": "phyrx_he_sig_b2_ofdma.h",
+      "common": 45,
+      "mismatches": {},
+      "peach_only": 0,
+      "qcc_only": 0
+    },
+    {
+      "file": "tx_msdu_extension.h",
+      "common": 197,
+      "mismatches": {},
+      "peach_only": 0,
+      "qcc_only": 0
+    },
+    {
+      "file": "wbm_link_descriptor_ring.h",
+      "common": 17,
+      "mismatches": {},
+      "peach_only": 0,
+      "qcc_only": 0
+    },
+    {
+      "file": "reo_flush_timeout_list.h",
+      "common": 53,
+      "mismatches": {},
+      "peach_only": 0,
+      "qcc_only": 0
+    },
+    {
+      "file": "reo_update_rx_reo_queue.h",
+      "common": 229,
+      "mismatches": {},
+      "peach_only": 0,
+      "qcc_only": 0
+    },
+    {
+      "file": "l_sig_b_info.h",
+      "common": 17,
+      "mismatches": {},
+      "peach_only": 0,
+      "qcc_only": 0
+    },
+    {
+      "file": "phyrx_abort_request_info.h",
+      "common": 41,
+      "mismatches": {},
+      "peach_only": 0,
+      "qcc_only": 0
+    },
+    {
+      "file": "buffer_addr_info.h",
+      "common": 17,
+      "mismatches": {},
+      "peach_only": 0,
+      "qcc_only": 0
+    },
+    {
+      "file": "msmhwioreg.h",
+      "common": 26,
+      "mismatches": {},
+      "peach_only": 0,
+      "qcc_only": 0
+    }
+  ]
+}

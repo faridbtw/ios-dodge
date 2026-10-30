@@ -1,0 +1,11 @@
+{
+  "ram_only": true,
+  "uefi_sha256": "2ee6c2a0def66dcb9ebe7a33268d3a1372202f1501de7219083fb647ab760955",
+  "ui_base": "Project Boot v24",
+  "native_wifi_handoff_device_verified": true,
+  "boot_ios_and_return_android_buttons_user_confirmed_predecessor": true,
+  "logs_button_label": "Logs",
+  "logs_above_centered_logo": true,
+  "wifi_menu_wait_separately_tested": false,
+  "source": "source/touch-runtime-v15"
+}

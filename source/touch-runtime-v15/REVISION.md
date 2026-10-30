@@ -1,5 +1,12 @@
-Current: v13 screen-brightness UEFI, retaining v12 live cold reboot, centered turtle, larger console, USB reconnect and touch lease guards.
+# Current source: Project Boot v25 Wi-Fi handoff
 
-Added native DCS51 diagnostic and explicit display configuration-AHB vote before XNU starts. Pixel/byte/PHY rates and panel mode are unchanged. Commands remain blocked while iOS owns touch. Protocol-only brightness lookup is retained for diagnosis; the phone has no installed DisplayPwrCtrl server.
+Historical directory name retained for existing build tools. Current source
+includes the Project Boot menu, centered logo/title, boxed touch-scrollable logs
+above the logo, persistent Logs label, USB reconnect and seven-core live reset.
+The exclusive native Wi-Fi MHI handoff uses a separately reserved 128 MiB DMA pool.
 
-Boot with fastboot boot only. Firmware templates and generated images remain local. See validation/screen-brightness and QUICKSTART.txt.
+Validated local UEFI SHA-256:
+2ee6c2a0def66dcb9ebe7a33268d3a1372202f1501de7219083fb647ab760955
+
+Build with RAM_ONLY=1 LOADER_PLATFORM=dodge EMBEDDED_USB=1 and LLVM in PATH.
+Local templates/images and private native firmware are not published.

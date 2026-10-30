@@ -1,0 +1,8 @@
+#!/usr/bin/env python3
+"""RAM-only iOS boot with the device-verified Peach Wi-Fi initialization."""
+from pathlib import Path
+import runpy
+
+if __name__ == '__main__':
+    root=Path(__file__).resolve().parents[1]
+    runpy.run_path(str(root/'experimental/wifi/darwin-handoff-v25/run-umac-ready-test.py'),run_name='__main__')

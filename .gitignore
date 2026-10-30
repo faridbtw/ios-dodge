@@ -41,3 +41,11 @@ venv/
 
 # Downloaded rootless packages and generated bootstrap are local inputs.
 /source/hackios-xnu-userland/jb/
+
+# ath12k downloaded/generated dependencies and host test outputs
+/source/wifi-peach/darwin-ath12k-v2/freebsd
+/source/wifi-peach/darwin-ath12k-v2/gen/
+/source/wifi-peach/darwin-ath12k-v2/obj/
+/source/wifi-peach/darwin-ath12k-v2/out/
+*.dSYM/
+*.err

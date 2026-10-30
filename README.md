@@ -22,11 +22,12 @@ An experimental iOS port for **OnePlus 13 (`dodge`, SM8750)**, with Adreno graph
 
 ## Feature status
 
-Status reflects the selected brightness build, last validated **29 October 2026**. Detailed evidence lives in [validation/](validation/); build identities are recorded in [STATUS.json](STATUS.json).
+Status reflects the selected Wi-Fi build, validated **30 October 2026**. Detailed evidence lives in [validation/](validation/); build identities are recorded in [STATUS.json](STATUS.json).
 
 | Feature | Status | What works |
 | :--- | :---: | :--- |
 | **iOS & touch** | Working | Interactive iOS, with seven cores running iOS and CPU0 serving firmware USB. |
+| **Wi-Fi** | Working | Settings scan/join, WPA2, IPv4, DNS and HTTPS; off/on and Safari user-confirmed. |
 | **Adreno 830** | Working | Hardware OpenGL ES 3.2 through Mesa 26.2.5 / Freedreno. |
 | **Screen brightness** | Working | Settings and Control Center sliders control the panel directly. |
 | **Battery** | Working | Live percentage, charging state and unplug/reconnect updates. |
@@ -41,7 +42,7 @@ Status reflects the selected brightness build, last validated **29 October 2026*
 
 | Area | Current state |
 | :--- | :--- |
-| **Wi-Fi** | Connection and traffic are unfinished. |
+| **Wi-Fi extended tests** | Roaming, long idle, sustained throughput and other security modes remain unverified. |
 | **Sound** | Speaker output is unresolved; work is paused. |
 | **Metal & 120 FPS** | Metal is disabled. Application rendering at 120 FPS is unverified; FPS work is stopped. |
 | **Display polish** | Scrolling is mostly tear-free. An occasional small split when dismissing apps remains a minor issue. |
@@ -57,8 +58,8 @@ Supply your own compatible system image, SDK, firmware and matching boot templat
 
 | Selected local artifact | Path |
 | :--- | :--- |
-| iOS UEFI | `experimental/uefi-turtle/screen-brightness-v13/dodge-ios-uefi.img` |
-| iOS payload | `experimental/screen-brightness/control-v2/payload.bin` |
+| iOS UEFI | `experimental/wifi/darwin-handoff-v25/project-boot-ios-uefi.img` |
+| iOS payload | `experimental/wifi/darwin-station-v14/payload.bin` |
 | System RAM image | `experimental/sileo/v1/system-sileo.apfs` |
 
 These are **local output paths**, not repository downloads. [QUICKSTART.txt](QUICKSTART.txt) describes the matching artifacts and fallback build. For rebuilding, start with [dependencies and provenance](SOURCE-PROVENANCE.md) and the [Sileo, flashlight and brightness guide](source/screen-brightness/README.txt).
@@ -68,10 +69,7 @@ These are **local output paths**, not repository downloads. [QUICKSTART.txt](QUI
 Run from the repository directory. This validates the local artifacts without contacting the phone:
 
 ```sh
-python3 tools/boot-op13-gles-v3.py \
-  --payload experimental/screen-brightness/control-v2/payload.bin \
-  --system experimental/sileo/v1/system-sileo.apfs \
-  --check
+python3 tools/boot-op13-wifi.py --check
 ```
 
 ### 3. Boot from Android
@@ -79,14 +77,12 @@ python3 tools/boot-op13-gles-v3.py \
 Connect the phone with Android fully started. Replace `YOUR_SERIAL` with its serial, and choose a **new** diagnostics output directory each time:
 
 ```sh
-python3 tools/boot-op13-gles-v3.py \
-  --payload experimental/screen-brightness/control-v2/payload.bin \
-  --system experimental/sileo/v1/system-sileo.apfs \
+python3 tools/boot-op13-wifi.py \
   --serial YOUR_SERIAL \
   --output diagnostics/ios-next
 ```
 
-The helper checks hashes, boots UEFI into RAM, prepares brightness and touch, uploads the system and starts iOS. It leaves iOS running and saves three live log captures.
+The helper checks hashes, boots UEFI into RAM, prepares native Wi-Fi firmware, rails, DMA and the exclusive MHI handoff, then stages iOS and starts it. It leaves iOS running and saves live log captures. Add `--menu` to wait for the phone’s Boot iOS button. The older GLES-only helper does not prepare the Wi-Fi transport.
 
 **Return to Android** from the selected seven-core build:
 
@@ -106,6 +102,7 @@ Cold-reset before another GPU session. The GPU retains protected memory; do not 
 | [Mesa](source/mesa26-op13/) | Consolidated Mesa 26.2.5 patch and changed-file hash manifest. |
 | [Brightness](source/screen-brightness/) | Screen agent, scoped Control Center hook, DSI tests and feature build guide. |
 | [Wallpaper preview](source/wallpaper-preview/) | Scoped CoreGraphics preview helper. |
+| [Wi-Fi](source/wifi-peach/WORKING.md) | Native Peach PCIe/MHI/QRTR transport, ath12k station stack, wake handshake and validation. |
 | [Tools](tools/) | Build, packaging, temporary boot and regression checks. |
 | [Validation](validation/) | Sanitized test results and artifact identities. |
 
@@ -157,7 +154,7 @@ python3 tools/test-op13-battery-wire.py
 
 The native DSI, display and reset checks exercise implementation code under AddressSanitizer / UndefinedBehaviorSanitizer. The remaining checks cover reconnect handling, turtle/console memory guards, slider bus behavior and battery protocol boundaries. Tests requiring private firmware or historical diagnostic inputs remain separate.
 
-Latest source checks: [29 October 2026](validation/20261029-source-checks.json).
+Latest source checks: [30 October 2026](validation/20261030-source-checks.json).
 
 </details>
 
@@ -166,7 +163,7 @@ Latest source checks: [29 October 2026](validation/20261029-source-checks.json).
 Built on **HackiOS / OOSEX GANG**, **Apple XNU**, **Project-Silicium**, **Mesa / Freedreno**, and **Qualcomm / OnePlus** platform work.
 
 - GPU / GLES sources: [iola1999 kernel](https://github.com/iola1999/hackios-xnu-kernel/tree/k90-port) and [userland](https://github.com/iola1999/hackios-xnu-userland/tree/k90-port), recovered from the supplied OnePlus 13 GLES v3 archive.
-- Battery transport reference: [ios-macan](https://github.com/hxfuxyy/ios-macan).
+- Battery and Wi-Fi station-stack reference: [ios-macan](https://github.com/hxfuxyy/ios-macan).
 - Slider and Focus behavior: [haxi0's OnePlus 8 kernel](https://github.com/haxi0/iphont-xnu-kernel/tree/instantnoodle) and [userland](https://github.com/haxi0/iphont-xnu-userland), adapted to Dodge's AK09970 hardware.
 
 Original notices and third-party licenses retain their scope. See [LICENSE](LICENSE) and [SOURCE-PROVENANCE.md](SOURCE-PROVENANCE.md) for attribution and integration boundaries.

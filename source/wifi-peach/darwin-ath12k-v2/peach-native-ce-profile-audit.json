@@ -1,0 +1,91 @@
+{
+  "native_source": "source/vendor-oneplus-sm8750-modules/vendor/qcom/opensource/wlan/qca-wifi-host-cmn/hif/src/ce/ce_assignment.h",
+  "native_sha256": "424a1dc144106b548fbf7969fecb2d592b82e2568bf18560ba73dffe12bd9b23",
+  "native_selector": "TARGET_TYPE_PEACH -> Kiwi, packetlog and CE7 diagnostics disabled",
+  "host": [
+    {
+      "src_nentries": 16,
+      "src_sz_max": 2048,
+      "dest_nentries": 0
+    },
+    {
+      "src_nentries": 0,
+      "src_sz_max": 2048,
+      "dest_nentries": 512
+    },
+    {
+      "src_nentries": 0,
+      "src_sz_max": 3520,
+      "dest_nentries": 256
+    },
+    {
+      "src_nentries": 32,
+      "src_sz_max": 3520,
+      "dest_nentries": 0
+    },
+    {
+      "src_nentries": 256,
+      "src_sz_max": 256,
+      "dest_nentries": 0
+    },
+    {
+      "src_nentries": 0,
+      "src_sz_max": 2048,
+      "dest_nentries": 0
+    },
+    {
+      "src_nentries": 0,
+      "src_sz_max": 0,
+      "dest_nentries": 0
+    },
+    {
+      "src_nentries": 0,
+      "src_sz_max": 2048,
+      "dest_nentries": 0
+    },
+    {
+      "src_nentries": 0,
+      "src_sz_max": 0,
+      "dest_nentries": 0
+    }
+  ],
+  "target": [
+    {
+      "nentries": 32,
+      "nbytes_max": 2048
+    },
+    {
+      "nentries": 32,
+      "nbytes_max": 2048
+    },
+    {
+      "nentries": 32,
+      "nbytes_max": 3520
+    },
+    {
+      "nentries": 32,
+      "nbytes_max": 3520
+    },
+    {
+      "nentries": 256,
+      "nbytes_max": 256
+    },
+    {
+      "nentries": 0,
+      "nbytes_max": 2048
+    },
+    {
+      "nentries": 32,
+      "nbytes_max": 16384
+    },
+    {
+      "nentries": 0,
+      "nbytes_max": 0
+    },
+    {
+      "nentries": 32,
+      "nbytes_max": 16384
+    }
+  ],
+  "matching": true
+}

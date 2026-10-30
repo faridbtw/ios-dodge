@@ -1,14 +1,14 @@
 {
-  "updated": "2026-10-29",
+  "updated": "2026-10-30",
   "project": "ios-dodge",
   "device": "OnePlus 13 / SM8750 / dodge",
   "ram_only": true,
   "phone_partition_writes": false,
   "selected_build": {
-    "uefi": "experimental/uefi-turtle/screen-brightness-v13/dodge-ios-uefi.img",
-    "uefi_sha256": "5bafc800875bedf74c312910af396726451f493ed0f4e14d113ef0e1b8c651a0",
-    "payload": "experimental/screen-brightness/control-v2/payload.bin",
-    "payload_sha256": "175dfc60e6673fd1c5a5b636b1d5e60b2db263e9e0af3c8424830fd5df2785aa",
+    "uefi": "experimental/wifi/darwin-handoff-v25/project-boot-ios-uefi.img",
+    "uefi_sha256": "2ee6c2a0def66dcb9ebe7a33268d3a1372202f1501de7219083fb647ab760955",
+    "payload": "experimental/wifi/darwin-station-v14/payload.bin",
+    "payload_sha256": "a876182c4edc815d706d76d7aa2a321b3913c52ba36e33d0aac1daf7d3d0f42f",
     "renderer": "Adreno 830 / Mesa 26.2.5 / GLES 3.2",
     "ios_cores": 7,
     "firmware_usb_cpu": 0,
@@ -17,7 +17,8 @@
     "framebuffer_advertised_hz": 60,
     "system_image": "experimental/sileo/v1/system-sileo.apfs",
     "system_sha256": "ece8098938ebbc265c8c782bf705cf2f74747deea002ec3a5548cb4307909ed3",
-    "kernel_sha256": "20ab2146d41ac3d66256155e18bf860e644d8151057b57ba2c2fbf52f27ecb02"
+    "kernel_sha256": "ca2cb1f8c057ceba910d0ae1b8f01f1270746380cfcf1931fa2c08f7de132147",
+    "boot_helper": "tools/boot-op13-wifi.py"
   },
   "verified": [
     "iOS boot and touch",
@@ -32,10 +33,13 @@
     "Sileo2.5.1 installed and user-confirmed opens; writable Procursus bootstrap initialized",
     "Control Center flashlight on/off and brightness levels, user-confirmed; native four-channel PM8550 driver",
     "Screen brightness in Settings and Control Center; user-confirmed native panel dim/bright",
-    "Power and both volume buttons user-confirmed after restoring saved brightness build"
+    "Power and both volume buttons user-confirmed after restoring saved brightness build",
+    "Settings Wi-Fi network discovery and WPA2/CCMP association",
+    "Wi-Fi DHCP IPv4, DNS and HTTPS HTTP200",
+    "Wi-Fi off/on and Safari loading user-confirmed",
+    "Project Boot touch and volume/power menu; log visibility and scroll controls"
   ],
   "open_issue_ids": [
-    "WIFI-01",
     "AUDIO-01",
     "WALLPAPER-02",
     "GPU-02",
@@ -44,7 +48,8 @@
   ],
   "unverified_issue_ids": [
     "PERF-01",
-    "DISPLAY-01"
+    "DISPLAY-01",
+    "WIFI-02"
   ],
   "audio_work": "paused",
   "lock_screen_picker_enabled": false,
@@ -52,9 +57,9 @@
   "application_120fps_verified": false,
   "sustained_stability_verified": false,
   "last_requested_phone_handoff": {
-    "os": "iOS saved brightness build",
+    "os": "iOS Wi-Fi build",
     "startup_confirmed": true,
-    "note": "Restored screen-brightness/control-v2; user confirmed Power and both volume buttons work again. Tearing work remains paused."
+    "note": "Left running in iOS after verified association, Internet and user-confirmed reconnection."
   },
   "evidence": [
     "validation/gpu-gles/STATUS.json",
@@ -63,7 +68,9 @@
     "validation/live-usb/STATUS.json",
     "validation/uefi/live-reset/STATUS.json",
     "validation/20261028-source-checks.json",
-    "validation/screen-brightness/STATUS.json"
+    "validation/screen-brightness/STATUS.json",
+    "validation/wifi/STATUS.json",
+    "validation/uefi/PROJECT-BOOT-v25.json"
   ],
   "display_observations": {
     "panel_te_period_us": 8290,
@@ -110,5 +117,14 @@
     "framebuffer_dimming": false,
     "source": "source/xnu-build-snapshot/xnu-8796.121.2/bsd/dev/op13_screen.c",
     "validation": "validation/screen-brightness/STATUS.json"
+  },
+  "wifi": {
+    "working": true,
+    "scan_and_join_user_confirmed": true,
+    "ipv4_dns_https_verified": true,
+    "toggle_and_safari_user_confirmed": true,
+    "native_umac_wake_after_unified_ready_verified": true,
+    "long_term_stability_verified": false,
+    "evidence": "validation/wifi/STATUS.json"
   }
 }

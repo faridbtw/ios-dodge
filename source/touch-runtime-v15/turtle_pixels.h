@@ -1,4 +1,4 @@
-/* Generated from assets/uefi/turtle-logo-300.bmp; 300x300 top-down grayscale. */
+/* Generated from assets/uefi/turtle-logo-uefi.bmp; 300x300 top-down grayscale. */
 static const uint8_t turtle_pixels[300 * 300] = {
 0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,

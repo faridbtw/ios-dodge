@@ -1,0 +1,24 @@
+{
+  "native_revision": "a85bac41e21a790e216039cde1d34a6c5d6416d1",
+  "sources": {
+    "qca-wifi-host-cmn/hif/src/pcie/if_pci.h": "acafdd935bc3957c3db0228a3fcdf4c8b4270fabfb101f39b4daadd3d972a9c4",
+    "qca-wifi-host-cmn/hif/src/pcie/if_pci.c": "7bf00b74fed2ec6eaab5c5413d7b5709c71d52c1ab9e45914aea635cf7b315b9",
+    "qcacld-3.0/configs/peach_defconfig": "e673bd5e2812a77cc0f3fc19ad5a1566e3b0f0b86f106a08a705f869f45c52d1",
+    "qcacld-3.0/configs/qcc2072_defconfig": "5a99e5f85c8cef132d24f0ee0e4486642badbd034868897baceebebb8064cd6c"
+  },
+  "wake_offset": "0x3004",
+  "handshake_offset": "0x01e04040",
+  "awake_value": 2,
+  "timeout_ms": 50,
+  "interval_ms": 5,
+  "peach_requires_umac_force_wake": true,
+  "qcc2072_requires_umac_force_wake": false,
+  "asan_ubsan_tests_passed": true,
+  "device_validation_pending": false,
+  "scan_encoder_asan_ubsan_passed": true,
+  "device_handshake_acknowledged_after_unified_ready": true,
+  "device_handshake_evidence": "diagnostics/20261030-wifi-macan/darwin25-umac-ready/ios-5-23.log",
+  "wake_before_unified_ready_failed": true,
+  "connection_stability_verified": false,
+  "initial_connection_and_https_verified": true
+}

@@ -82,3 +82,28 @@ Retain the original notices in every source subtree. The kernel project and XNU 
 - Native source builds and helpers are validated separately from historical phone binaries. The handset kernel also contains gated, unfinished audio diagnostics that remain excluded from this source update. They are not claimed as a sound fix; bit-identical reproduction of the phone kernel is not asserted.
 - The nonpreemptible-copy display experiment is excluded: the user reported button failure while it ran; restoring the selected brightness build recovered Power and both volume buttons. The cause is unproven, and remaining minor app-dismiss tearing is deprioritized.
 - `validation/screen-brightness`, `flashlight`, `sileo`, `buttons` and `uefi/BRIGHTNESS-v13.json` contain sanitized results. Runtime images, raw logs, calibration, credentials, firmware and SDKs remain local.
+
+## 30 October 2026 — Project Boot and native Peach Wi-Fi
+
+- Published the complete current UEFI source (Project Boot menu/log controls and
+  native Wi-Fi preparation) in `source/touch-runtime-v15`; that historical directory
+  name is retained for build-tool compatibility. See its REVISION.md.
+- Added the actual Peach PCIe profile, MHI/QRTR handoff and station adaptation under
+  `source/wifi-peach/darwin-ath12k-v2` and the active XNU `bsd/dev/op13wifi` sources.
+  ios-macan reference revision: bf6106be492670acd05fac0ee7b7d037a48eafd9.
+  Linux 7.0.14 and FreeBSD 15.1 archive hashes/licenses are recorded in UPSTREAM.json.
+  Native OnePlus modules revision: a85bac41e21a790e216039cde1d34a6c5d6416d1;
+  common-kernel revision: 3fb07dee0ecf8afef28e6bd15e9ad6b34ecc22c0.
+- Wi-Fi works on-device: Settings discovery/join, WPA2/CCMP, DHCP IPv4, DNS and
+  HTTPS HTTP200; the user confirmed Wi-Fi off/on and Safari. UMAC force-wake
+  follows the native Peach configuration and runs after WMI unified-ready.
+  Successful scan results survive later scan errors; inline beacon IEs are retained.
+- Existing Adreno/Mesa/display/UI fixes are retained. Paused audio diagnostics
+  remain excluded as in the previous source publication; bit-identical rebuilding
+  of the phone kernel is not asserted. Published active Wi-Fi files match the
+  verified local source; validation records the original handset artifact hashes.
+- Generated images/objects, Apple system/SDK files, private firmware/BDF/calibration,
+  credentials, device identifiers and raw logs are omitted. Local-only BUILD.json,
+  matching images and firmware are required by the pinned RAM boot helper.
+- Details/build/test notes: `source/wifi-peach/WORKING.md`;
+  sanitized evidence: `validation/wifi/STATUS.json`.

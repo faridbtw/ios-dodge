@@ -142,10 +142,14 @@ sta_runs(__unused void *parameter, __unused wait_result_t result)
 			lck_mtx_unlock(&sta_lock);
 		} else if (do_scan) {
 			error = ops->scan(&scan);
+			/* Keep the last completed scan if a subsequent request fails. */
+			if (error == 0) {
 			lck_mtx_lock(&sta_lock);
 			heard_count = 0;
 			lck_mtx_unlock(&sta_lock);
 			ops->heard(heard_one, NULL);
+			}
+			redwood_wifi_tell("apple80211-scan: completed error=%d cached=%u\n", error, heard_count);
 			redwood_apple80211_event(REDWOOD_STA_SCAN_DONE, error);
 		}
 

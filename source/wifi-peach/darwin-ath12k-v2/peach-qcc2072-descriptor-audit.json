@@ -1,0 +1,74 @@
+[
+  {
+    "file": "rx_mpdu_start.h",
+    "peach_fields": 469,
+    "qcc_fields": 469,
+    "identical_common": 469,
+    "different": {},
+    "peach_only": [],
+    "qcc_only": []
+  },
+  {
+    "file": "rx_msdu_end.h",
+    "peach_fields": 609,
+    "qcc_fields": 609,
+    "identical_common": 609,
+    "different": {},
+    "peach_only": [],
+    "qcc_only": []
+  },
+  {
+    "file": "tcl_data_cmd.h",
+    "peach_fields": 153,
+    "qcc_fields": 153,
+    "identical_common": 153,
+    "different": {},
+    "peach_only": [],
+    "qcc_only": []
+  },
+  {
+    "file": "wbm_release_ring.h",
+    "peach_fields": 61,
+    "qcc_fields": 61,
+    "identical_common": 61,
+    "different": {},
+    "peach_only": [],
+    "qcc_only": []
+  },
+  {
+    "file": "reo_destination_ring.h",
+    "peach_fields": 173,
+    "qcc_fields": 173,
+    "identical_common": 173,
+    "different": {},
+    "peach_only": [],
+    "qcc_only": []
+  },
+  {
+    "file": "reo_entrance_ring.h",
+    "peach_fields": 145,
+    "qcc_fields": 145,
+    "identical_common": 145,
+    "different": {},
+    "peach_only": [],
+    "qcc_only": []
+  },
+  {
+    "file": "buffer_addr_info.h",
+    "peach_fields": 17,
+    "qcc_fields": 17,
+    "identical_common": 17,
+    "different": {},
+    "peach_only": [],
+    "qcc_only": []
+  },
+  {
+    "file": "rx_msdu_link.h",
+    "peach_fields": 685,
+    "qcc_fields": 685,
+    "identical_common": 685,
+    "different": {},
+    "peach_only": [],
+    "qcc_only": []
+  }
+]
