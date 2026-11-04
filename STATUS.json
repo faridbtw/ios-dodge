@@ -1,130 +1,41 @@
 {
-  "updated": "2026-10-30",
-  "project": "ios-dodge",
-  "device": "OnePlus 13 / SM8750 / dodge",
+  "updated": "2026-11-04",
+  "ios_version": "27.2",
+  "build": "24B119",
   "ram_only": true,
   "phone_partition_writes": false,
-  "selected_build": {
-    "uefi": "experimental/wifi/darwin-handoff-v25/project-boot-ios-uefi.img",
-    "uefi_sha256": "2ee6c2a0def66dcb9ebe7a33268d3a1372202f1501de7219083fb647ab760955",
-    "payload": "experimental/wifi/darwin-station-v14/payload.bin",
-    "payload_sha256": "a876182c4edc815d706d76d7aa2a321b3913c52ba36e33d0aac1daf7d3d0f42f",
-    "renderer": "Adreno 830 / Mesa 26.2.5 / GLES 3.2",
-    "ios_cores": 7,
-    "firmware_usb_cpu": 0,
-    "metal_enabled": false,
-    "artifacts_in_repository": false,
-    "framebuffer_advertised_hz": 60,
-    "system_image": "experimental/sileo/v1/system-sileo.apfs",
-    "system_sha256": "ece8098938ebbc265c8c782bf705cf2f74747deea002ec3a5548cb4307909ed3",
-    "kernel_sha256": "ca2cb1f8c057ceba910d0ae1b8f01f1270746380cfcf1931fa2c08f7de132147",
-    "boot_helper": "tools/boot-op13-wifi.py"
-  },
+  "local_profile": "status-layout-v4",
+  "kernel_sha256": "5f5221979cbdd271607234de772738fea040f2df983b4b595362c101b25d0650",
+  "uefi_sha256": "c0e8d7cf226e2f318dfe5f8470da99753ea6a553b1bedb37e01e1032152a2db4",
   "verified": [
-    "iOS boot and touch",
-    "Adreno hardware GLES rendering",
-    "horizontal tearing resolved in user testing",
-    "Settings wallpaper selection and scoped preview capture",
-    "live battery percentage and charging updates",
-    "alert slider ring/silent/Do Not Disturb",
-    "seven-core firmware USB diagnostics",
-    "live USB cold reboot to Android",
-    "centered turtle and larger console logs",
-    "Sileo2.5.1 installed and user-confirmed opens; writable Procursus bootstrap initialized",
-    "Control Center flashlight on/off and brightness levels, user-confirmed; native four-channel PM8550 driver",
-    "Screen brightness in Settings and Control Center; user-confirmed native panel dim/bright",
-    "Power and both volume buttons user-confirmed after restoring saved brightness build",
-    "Settings Wi-Fi network discovery and WPA2/CCMP association",
-    "Wi-Fi DHCP IPv4, DNS and HTTPS HTTP200",
-    "Wi-Fi off/on and Safari loading user-confirmed",
-    "Project Boot touch and volume/power menu; log visibility and scroll controls"
+    "iOS home/lock screen and touch",
+    "arm64e Vulkan/Metal standalone probes: zero failures",
+    "native EDR startup improves UI responsiveness",
+    "hardware battery percentage and live charging/unplug/reconnect",
+    "wallpaper display",
+    "user-confirmed Dynamic Island alignment",
+    "user-confirmed battery status-bar placement"
   ],
-  "open_issue_ids": [
-    "AUDIO-01",
-    "WALLPAPER-02",
-    "GPU-02",
-    "USB-02",
-    "DISPLAY-03"
+  "unresolved": [
+    "status-bar clock absent after native timer restart",
+    "wallpaper selection fails or resprings",
+    "blank widgets",
+    "startup/animation black bands",
+    "60/120 FPS not established",
+    "Wi-Fi disabled in iOS27 profile",
+    "sound/Voice Memos unverified; reported freeze",
+    "shutdown panic after oem stop"
   ],
-  "unverified_issue_ids": [
-    "PERF-01",
-    "DISPLAY-01",
-    "WIFI-02"
+  "not_implemented": [
+    "replacement compatibility clock overlay"
   ],
-  "audio_work": "paused",
-  "lock_screen_picker_enabled": false,
-  "native_eight_core_usb_verified": false,
-  "application_120fps_verified": false,
-  "sustained_stability_verified": false,
-  "last_requested_phone_handoff": {
-    "os": "iOS Wi-Fi build",
-    "startup_confirmed": true,
-    "note": "Left running in iOS after verified association, Internet and user-confirmed reconnection."
-  },
-  "evidence": [
-    "validation/gpu-gles/STATUS.json",
-    "validation/display/STATUS.json",
-    "validation/wallpaper/STATUS.json",
-    "validation/live-usb/STATUS.json",
-    "validation/uefi/live-reset/STATUS.json",
-    "validation/20261028-source-checks.json",
-    "validation/screen-brightness/STATUS.json",
-    "validation/wifi/STATUS.json",
-    "validation/uefi/PROJECT-BOOT-v25.json"
+  "excluded": [
+    "Apple runtime images/caches",
+    "firmware/calibration",
+    "SDKs",
+    "raw logs",
+    "credentials",
+    "compiled payloads"
   ],
-  "display_observations": {
-    "panel_te_period_us": 8290,
-    "final_copy_min_us": 1110,
-    "final_copy_max_us": 2943,
-    "saved_commit_samples": 13,
-    "te_timeouts_reported": 0,
-    "user_confirmed_horizontal_tearing_gone": true,
-    "application_fps_measured": false,
-    "user_reported_app_switcher_horizontal_tearing": true,
-    "switcher_test_payload": "experimental/display/anti-tear-v2/payload.bin",
-    "switcher_work": "paused at user request",
-    "switcher_fix_user_confirmed": false,
-    "switcher_candidate_button_regression": true,
-    "stable_build_buttons_user_confirmed": true,
-    "residual_tearing_severity": "minor; user says almost gone and not a priority"
-  },
-  "sileo": {
-    "version": "2.5.1",
-    "user_confirmed_opens": true,
-    "bootstrap_in_ram": true,
-    "ellekit": "0.4.5",
-    "network_package_downloads_verified": false,
-    "arbitrary_tweaks_verified": false
-  },
-  "fps_work": "stopped at user request",
-  "flashlight": {
-    "user_confirmed_on_off": true,
-    "channels": 4,
-    "effective_max_ma_per_channel": 30,
-    "automatic_cutoff_seconds": 30,
-    "worker_sleeps": true,
-    "source": "source/xnu-build-snapshot/xnu-8796.121.2/bsd/dev/redwood_torch.c",
-    "payload": "experimental/screen-brightness/control-v2/payload.bin",
-    "user_confirmed_brightness_levels": true
-  },
-  "screen_brightness": {
-    "user_confirmed_settings": true,
-    "user_confirmed_control_center": true,
-    "native_dcs51": true,
-    "normal_max_dbv": 3515,
-    "minimum_dbv": 8,
-    "config_ahb_vote": true,
-    "framebuffer_dimming": false,
-    "source": "source/xnu-build-snapshot/xnu-8796.121.2/bsd/dev/op13_screen.c",
-    "validation": "validation/screen-brightness/STATUS.json"
-  },
-  "wifi": {
-    "working": true,
-    "scan_and_join_user_confirmed": true,
-    "ipv4_dns_https_verified": true,
-    "toggle_and_safari_user_confirmed": true,
-    "native_umac_wake_after_unified_ready_verified": true,
-    "long_term_stability_verified": false,
-    "evidence": "validation/wifi/STATUS.json"
-  }
+  "documentation_updated": "2026-11-05"
 }
