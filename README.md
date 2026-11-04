@@ -20,6 +20,10 @@ An experimental iOS port for **OnePlus 13 (`dodge`, SM8750)**, with Adreno graph
 
 > **RAM only.** Use `fastboot boot` and temporary staging. Never flash or erase phone partitions. System images, firmware, SDKs, device calibration and raw logs stay local.
 
+## Experimental iOS 27 branch
+
+The iOS 27.2 source snapshot and confirmed battery, GPU, wallpaper-display and status-bar changes are in [source/ios27](source/ios27/README.md). [Current iOS 27 status](validation/ios27/STATUS.json) records the remaining clock, picker, graphics and audio issues. The feature table below describes the earlier iOS 16 baseline, not iOS 27.
+
 ## Feature status
 
 Status reflects the selected Wi-Fi build, validated **30 October 2026**. Detailed evidence lives in [validation/](validation/); build identities are recorded in [STATUS.json](STATUS.json).

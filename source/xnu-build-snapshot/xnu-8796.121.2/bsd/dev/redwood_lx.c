@@ -63,9 +63,6 @@ lx_os_free(void *memory, unsigned long size)
 void *
 lx_os_radio_memory(unsigned long size, unsigned long long *address)
 {
- extern int lx_os_peach_ready(void);
- extern void *op13_peach_radio_memory(unsigned long,unsigned long long *);
- if(lx_os_peach_ready())return op13_peach_radio_memory(size,address);
 	vm_offset_t cached = 0, uncached;
 	uint64_t physical;
 
@@ -211,9 +208,6 @@ lx_os_random(void *buffer, unsigned long size)
 unsigned
 lx_os_option(const char *name)
 {
- extern int lx_os_peach_ready(void);
- extern unsigned op13_peach_option(const char *);
- if(lx_os_peach_ready())return op13_peach_option(name);
 	return redwood_wifi_option(name);
 }
 
@@ -234,8 +228,6 @@ lx_os_firmware(const char *name, const void **data, unsigned long *size)
 int
 lx_os_rproc_boot(void)
 {
- extern int lx_os_peach_ready(void);
- if(lx_os_peach_ready())return 0;
 	return redwood_wifi_dsp_is_up() ? 0 : ENXIO;
 }
 
@@ -314,7 +306,7 @@ lx_link_transmit(mbuf_t packet, size_t length)
 }
 
 static struct redwood_net_link lx_link = {
-	.name = "OnePlus13 Peach Wi-Fi (ath12k)",
+	.name = "the phone's radio (ath11k)",
 	.wireless = true,
 	.transmit = lx_link_transmit,
 };

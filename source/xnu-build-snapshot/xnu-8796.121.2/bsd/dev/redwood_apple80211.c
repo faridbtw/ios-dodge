@@ -252,10 +252,9 @@ give_network(const struct apple80211req *request, const struct redwood_sta_bss *
 		return ENOMEM;
 	}
 	if (request->req_len >= sizeof(*result) && copyin(request->req_data, result, offsetof(struct apple80211_scan_result,
-	    elements)) == 0 && result->elements_length != 0 && result->elements_length < room) {
+	    elements)) == 0 && result->elements_length < room) {
 		room = result->elements_length;
 	}
-	/* A zero-initialized GET buffer still has its full inline IE capacity. */
 	bzero(result, sizeof(*result));
 	result->version = 1;
 	channel_fill(&result->channel, bss->frequency, 0);
@@ -267,11 +266,6 @@ give_network(const struct apple80211req *request, const struct redwood_sta_bss *
 	memcpy(result->ssid, bss->ssid, bss->ssid_length);
 	result->age_ms = bss->age_ms;
 	result->elements_length = (uint16_t)(bss->elements_length <= room ? bss->elements_length : 0);
-	{
-		static unsigned trace;
-		if (trace++ < 8) redwood_wifi_tell("apple80211-scan: encoding ssid-bytes=%u ie-capacity=%u ies-out=%u\n",
-		    bss->ssid_length, room, result->elements_length);
-	}
 	memcpy(result->elements, bss->elements, result->elements_length);
 	/* the rates it says it has (elements 1 and 50: units of 500 kbit/s, the top bit marks the ones everybody must have) */
 	for (unsigned at = 0; at + 2 <= bss->elements_length && at + 2 + bss->elements[at + 1] <= bss->elements_length;
@@ -388,11 +382,6 @@ get(struct apple80211req *request)
 		lck_mtx_unlock(&apple80211_lock);
 		there = redwood_sta_heard(index, bss);
 		error = there ? give_network(request, bss) : EIO;
-		if (index < 3 || !there) {
-			static unsigned trace;
-			if (trace++ < 64) redwood_wifi_tell("apple80211-scan: index=%u present=%u buffer=%u ies=%u error=%d\n",
-			    index, there, request->req_len, there ? bss->elements_length : 0, error);
-		}
 		kfree_data(bss, sizeof(*bss));
 		return error;
 	}
@@ -736,11 +725,6 @@ redwood_apple80211_ioctl(u_long command, void *data)
 	proc_selfname(who, sizeof(who));
 	error = is_set ? set(request, what, sizeof(what)) : get(request);
 	note(request, is_set, error);
-	if (request->req_type == 10 || request->req_type == 11 || request->req_type == 86) {
-		static unsigned trace;
-		if (trace++ < 96) redwood_wifi_tell("apple80211-scan: %s type=%d length=%u error=%d%s\n",
-		    is_set ? "set" : "get", request->req_type, request->req_len, error, what);
-	}
 	/* (a request that is repeated for ever is said a few hundred times) */
 	if (said < 800) {
 		said++;

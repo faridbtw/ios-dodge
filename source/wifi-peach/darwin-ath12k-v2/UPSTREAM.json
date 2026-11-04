@@ -17,9 +17,9 @@
   "device_validated": true,
   "adapted_object_sha256": "eaa74b54e6a480c9cee10eca792d92bd69f78bf5f1652ccea2205e3058cb7df1",
   "device_scan_verified": true,
-  "scan_evidence": "validation/wifi/STATUS.json",
-  "experimental_scan_policy": "Passive discovery on Peach; scan and connection verified",
-  "native_umac_wake": "Native Peach UMAC wake after WMI unified-ready; acknowledged and IPv4/DNS/HTTPS verified",
-  "connection_evidence": "validation/wifi/STATUS.json",
+  "scan_evidence": "diagnostics/20261030-wifi-macan/darwin25-full-scan/RESULT.json",
+  "experimental_scan_policy": "Passive discovery on Peach; direct ZOV join pending hardware validation",
+  "native_umac_wake": "Native Peach handshake AFTER WMI unified-ready device acknowledged scratch2; connection/stability not verified",
+  "connection_evidence": "diagnostics/20261030-wifi-macan/darwin25-umac-ready/RESULT.json",
   "long_term_stability_verified": false
 }

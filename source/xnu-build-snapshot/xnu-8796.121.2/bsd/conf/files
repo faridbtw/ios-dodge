@@ -130,6 +130,16 @@ bsd/dev/redwood_apple80211.c	standard
 bsd/dev/redwood_cpufreq.c	standard
 bsd/dev/redwood_adreno.c	standard
 bsd/dev/op13_probe_reset.c	standard
+bsd/dev/adreno8.c	standard
+bsd/dev/adreno8_secure.c	standard
+bsd/dev/adreno8_cx.c	standard
+bsd/dev/adreno8_gmu.c	standard
+bsd/dev/adreno8_gpu.c	standard
+bsd/dev/adreno8_hfi.c	standard
+bsd/dev/adreno8_hwsched.c	standard
+bsd/dev/adreno8_memory.c	standard
+bsd/dev/adreno8_smmu.c	standard
+bsd/dev/adreno8_zap.c	standard
 bsd/dev/redwood_audio.c		standard
 bsd/dev/redwood_virtio_sound.c	standard
 bsd/dev/redwood_speaker.c	standard
@@ -645,26 +655,4 @@ bsd/skywalk/packet/pbufpool.c			optional skywalk
 bsd/skywalk/packet/pbufpool_kern.c		optional skywalk
 bsd/dev/cpu_copy_in_cksum_gen.c			optional skywalk
 
-bsd/dev/adreno8.c	standard
-bsd/dev/adreno8_bo.c	standard
-bsd/dev/adreno8_clock.c	standard
-bsd/dev/adreno8_context.c	standard
-bsd/dev/adreno8_cx.c	standard
-bsd/dev/adreno8_gmu.c	standard
-bsd/dev/adreno8_gpu.c	standard
-bsd/dev/adreno8_hfi.c	standard
-bsd/dev/adreno8_hwsched.c	standard
-bsd/dev/adreno8_memory.c	standard
-bsd/dev/adreno8_rpmh.c	standard
-bsd/dev/adreno8_secure.c	standard
-bsd/dev/adreno8_smmu.c	standard
-bsd/dev/adreno8_translation.c	standard
-bsd/dev/adreno8_zap.c	standard
-bsd/dev/annibale_cpufreq.c	standard
-bsd/dev/k90_oneplus_gpu.c	standard
-bsd/dev/redwood_gpu_dispatch.c	standard
-
-bsd/dev/op13_screen.c		standard
-
-bsd/dev/op13wifi/mhi_host.c standard
-bsd/dev/op13wifi/op13_peach_transport.c standard
+bsd/dev/adreno8_protected.c standard

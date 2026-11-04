@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """Configure/build the separately prepared Mesa26 Adreno830 iOS runtime.
-Prepare with tools/prepare-op13-gles-mesa.py; see source/mesa26-op13.
+See diagnostics/20261025-gen8-bringup/mesa26 for patch provenance/resolutions.
 """
 from pathlib import Path
 import subprocess,os,re,hashlib
@@ -9,8 +9,7 @@ work=r/'build/mesa26-ios'
 src=work/'mesa-26.2.5'
 assert hashlib.sha256((work/'mesa-26.2.5.tar.xz').read_bytes()).hexdigest()=='794b3d1729075dae7ebd47c7283b7ca0cdb5dec668f7f11cc0a5d82f6138a0a5'
 assert (src/'.op13-prepared').exists() and not list(src.rglob('*.rej'))
-sdk=os.environ.get('OP13_IOS_SDK', str(r/'build/mac-xnu/deps/ios-sdks/iPhoneOS16.5.sdk'))
-assert Path(sdk).is_dir(), 'Supply the pinned iPhoneOS16.5 SDK with OP13_IOS_SDK'
+sdk=subprocess.check_output(['xcrun','--sdk','iphoneos','--show-sdk-path'],text=True).strip()
 cross=work/'ios-cross.ini';cross.write_text(f'''[binaries]
 c = ['clang', '-target', 'arm64-apple-ios16.5', '-isysroot', '{sdk}']
 cpp = ['clang++', '-target', 'arm64-apple-ios16.5', '-isysroot', '{sdk}']

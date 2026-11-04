@@ -3,7 +3,7 @@
 from pathlib import Path
 import subprocess,tempfile
 ROOT=Path(__file__).resolve().parents[1]
-header=ROOT/'source/xnu-build-snapshot/xnu-8796.121.2/iokit/Kernel'
+header=ROOT/'experimental/display/anti-tear-v2/xnu-src/iokit/Kernel'
 source=r'''
 #include <assert.h>
 #include <stdio.h>
@@ -26,11 +26,18 @@ int main(void){
    assert(c.now-before<25002000);assert(c.now%c.period<70000);cases++;
   }
   assert(c.sleeps);assert(!state.failures);
+  assert(mini_fb_te_copy_ready(&state,state.last));
+  assert(mini_fb_te_copy_ready(&state,state.last+150000));
+  assert(!mini_fb_te_copy_ready(&state,state.last+150001));
+  assert(!mini_fb_te_copy_ready(&state,state.last-1));
+  /* A post-edge scheduling delay must retain the previous frame and retry. */
+  c.now+=1000000;assert(!mini_fb_te_copy_ready(&state,c.now));
+  assert(mini_fb_wait_te(&state,&io));assert(mini_fb_te_copy_ready(&state,c.now));cases+=6;
  }
  for(int stuck=0;stuck<=1;stuck++){
   struct clock c={0,8333333,stuck,0,0};struct mini_fb_te state={0,0,0,1};struct mini_fb_te_io io={&c,now,level,sleep_until};
   for(unsigned i=0;i<3;i++){uint64_t before=c.now;assert(!mini_fb_wait_te(&state,&io));assert(c.now-before<=50003000);}
-  assert(!state.enabled);unsigned reads=c.reads;assert(!mini_fb_wait_te(&state,&io));assert(reads==c.reads);cases++;
+  assert(!state.enabled);assert(!mini_fb_te_copy_ready(&state,c.now));unsigned reads=c.reads;assert(!mini_fb_wait_te(&state,&io));assert(reads==c.reads);cases++;
  }
  for(unsigned width=1;width<=127;width+=7)for(unsigned height=1;height<=43;height+=3){
   unsigned stride=width*4+16;size_t n=(size_t)stride*height;unsigned char*a=malloc(n+32),*b=malloc(n+32);assert(a&&b);

@@ -25,6 +25,13 @@
 #include <sys/redwood_input.h>
 #include <sys/op13_battery_dsp.h>
 #include "op13_battery_wire.h"
+#include <sys/op13_audio_wire.h>
+#include <sys/op13_audio_smmu.h>
+#include <sys/op13_audio_data.h>
+#include <sys/op13_audio_dma.h>
+#include <sys/op13_audio_i2c.h>
+#include <sys/op13_audio_amp.h>
+#include <sys/op13_audio_tone.h>
 extern vm_offset_t ml_io_map(vm_offset_t phys_addr, vm_size_t size);
 extern vm_offset_t ml_io_map_unmappable(vm_offset_t phys_addr, vm_size_t size, unsigned int flags);
 extern void ml_io_unmap(vm_offset_t addr, vm_size_t sz);
@@ -1354,7 +1361,7 @@ struct glink_channel {
  struct {
   uint32_t id, size;
   bool there, in_use;
- } their_intents[64];
+ } their_intents[256];
  struct {
   uint32_t size, fill;
   uint8_t *data;
@@ -1935,6 +1942,11 @@ struct gpr_header {
  uint32_t packet, domains, source_port, dest_port, token, opcode;
 };
 static uint32_t gpr_token, gpr_state, gpr_error, gpr_in, gpr_out;
+static uint32_t gpr_command=APM_CMD_GET_SPF_STATE;
+static uint32_t gpr_service=1,gpr_response,gpr_value,gpr_audio_map_handle;
+static vm_offset_t op13_audio_monitor_pins;
+static bool op13_audio_queue_active;
+static uint32_t op13_audio_queue_tokens[8],op13_audio_queue_returned,op13_audio_queue_error;
 static bool gpr_answered, audio_up;
 static LCK_MTX_DECLARE(gpr_lock, &adsp_lock_group);
 static void
@@ -1946,7 +1958,22 @@ gpr_input(const uint8_t *data, uint32_t length)
  memcpy(&h, data, sizeof(h));
  uint32_t header_size = ((h.packet >> 4) & 15) * 4;
  if ((h.packet & 15) != 0 || header_size < sizeof(h) || (h.packet >> 8) != length ||
-     header_size > length || (h.domains & 0xffff) != 0x0203 || h.dest_port != 1 || h.source_port != 1) { return; }
+     header_size > length || (h.domains & 0xffff) != 0x0203 || h.dest_port != 1) { return; }
+ if(os_atomic_load(&op13_audio_queue_active,acquire)&&h.source_port==0x6000&&(h.opcode==OP13_AR_WRITE_REPLY||h.opcode==GPR_BASIC_RSP_RESULT)) {
+  unsigned period=h.token&7;uint32_t reply[8]={0};
+  if(!(h.token&0x80000000u)||h.token!=os_atomic_load(&op13_audio_queue_tokens[period],acquire))return;
+  if(h.opcode==GPR_BASIC_RSP_RESULT){
+   uint32_t basic[2]={0};if(length-header_size>=8)memcpy(basic,data+header_size,8);
+   if(length-header_size<8||basic[0]!=OP13_AR_WRITE||basic[1])os_atomic_store(&op13_audio_queue_error,basic[1]?basic[1]:1,release);
+   return;
+  }
+  if(length-header_size!=sizeof(reply)){os_atomic_store(&op13_audio_queue_error,1,release);return;}
+  memcpy(reply,data+header_size,sizeof(reply));
+  if(op13_ar_period_reply(reply,sizeof(reply),gpr_audio_map_handle,period))
+   os_atomic_store(&op13_audio_queue_error,1,release);
+  os_atomic_or(&op13_audio_queue_returned,1u<<period,release);return;
+ }
+ if(h.source_port!=gpr_service)return;
  gpr_in++;
  if (length - header_size >= 4) { memcpy(words, data + header_size, 4); }
  if (length - header_size >= 8) { memcpy(words + 1, data + header_size + 4, 4); }
@@ -1956,8 +1983,18 @@ gpr_input(const uint8_t *data, uint32_t length)
  if (h.opcode == APM_CMD_RSP_GET_SPF_STATE && length - header_size >= 4) {
   gpr_state = words[0]; gpr_error = 0;
   os_atomic_store(&gpr_answered, true, release);
- } else if (h.opcode == GPR_BASIC_RSP_RESULT && length - header_size >= 8 && words[0] == APM_CMD_GET_SPF_STATE) {
-  if (words[1]) { gpr_error = words[1]; os_atomic_store(&gpr_answered, true, release); }
+ } else if (gpr_response && h.opcode == gpr_response &&
+            (h.opcode==OP13_AR_MAP_REPLY||h.opcode==OP13_AR_WRITE_REPLY)) {
+  uint32_t reply[8]={0};unsigned n=length-header_size;
+  if(n<=sizeof(reply))memcpy(reply,data+header_size,n);
+  uint32_t value=0;
+  int parsed=op13_ar_data_reply(h.opcode,reply,n,gpr_audio_map_handle,&value);
+  gpr_error=parsed?EINVAL:(h.opcode==OP13_AR_MAP_REPLY?0:value);
+  gpr_value=parsed?0:value;os_atomic_store(&gpr_answered,true,release);
+ } else if (gpr_response && h.opcode == gpr_response && length - header_size >= 8) {
+  gpr_error=words[1];os_atomic_store(&gpr_answered,true,release);
+ } else if (h.opcode == GPR_BASIC_RSP_RESULT && length - header_size >= 8 && words[0] == gpr_command) {
+  if (words[1] || (gpr_command != APM_CMD_GET_SPF_STATE && !gpr_response)) { gpr_error = words[1]; os_atomic_store(&gpr_answered, true, release); }
  }
  lck_mtx_unlock(&gpr_lock);
 }
@@ -1975,6 +2012,7 @@ step_gpr(void)
       .source_port = 1, .dest_port = 1, .opcode = APM_CMD_GET_SPF_STATE } };
   lck_mtx_lock(&gpr_lock);
   packet.h.token = ++gpr_token;
+  gpr_command=APM_CMD_GET_SPF_STATE;gpr_service=1;gpr_response=0;
   gpr_state = 0; gpr_error = 0;
   os_atomic_store(&gpr_answered, false, release);
   lck_mtx_unlock(&gpr_lock);
@@ -1990,6 +2028,333 @@ step_gpr(void)
   sleep_ms(200);
  }
  return false;
+}
+static void op13_audio_log(const char *format, ...) __printflike(1,2);
+static void op13_audio_log(const char *format, ...)
+{
+ char line[200];va_list ap;va_start(ap,format);vsnprintf(line,sizeof(line),format,ap);va_end(ap);
+ for(const char *c=line;*c;c++)loader_log_putc(*c);printf("%s",line);
+}
+static bool op13_audio_send_to(uint32_t service,uint32_t opcode,uint32_t response,const struct op13_ar_words *body,bool apm)
+{
+ struct {struct gpr_header h;uint32_t payload[132];} packet;
+ if(body->failed||body->count>128)return false;
+ uint32_t size=24+(apm?16:0)+body->count*4;
+ bzero(&packet,sizeof(packet));packet.h.packet=(size<<8)|(6u<<4);
+ packet.h.domains=0x0302;packet.h.source_port=1;packet.h.dest_port=service;packet.h.opcode=opcode;
+ if(apm)packet.payload[3]=body->count*4;
+ memcpy(packet.payload+(apm?4:0),body->data,body->count*4);
+ lck_mtx_lock(&gpr_lock);packet.h.token=++gpr_token;gpr_command=opcode;gpr_service=service;gpr_response=response;gpr_error=~0u;gpr_value=0;
+ os_atomic_store(&gpr_answered,false,release);lck_mtx_unlock(&gpr_lock);
+ op13_audio_log("op13-audio: APM request opcode=%#x token=%u payload=%u\n",opcode,packet.h.token,body->count*4);
+ unsigned advertised=0,available=0,largest=0;
+ lck_mtx_lock(&glink_lock);
+ for(unsigned i=0;i<sizeof(glink.channel[CHANNEL_GPR].their_intents)/sizeof(glink.channel[CHANNEL_GPR].their_intents[0]);i++) {
+  if(!glink.channel[CHANNEL_GPR].their_intents[i].there)continue;
+  advertised++;uint32_t n=glink.channel[CHANNEL_GPR].their_intents[i].size;
+  if(n>largest)largest=n;
+  if(!glink.channel[CHANNEL_GPR].their_intents[i].in_use&&n>=size)available++;
+ }
+ lck_mtx_unlock(&glink_lock);
+ op13_audio_log("op13-audio: GPR peer intents=%u largest=%u available-for-%u=%u\n",advertised,largest,size,available);
+ int sent=glink_send(&glink.channel[CHANNEL_GPR],&packet,size);
+ if(sent){op13_audio_log("op13-audio: GPR send error=%d\n",sent);return false;}
+ gpr_out++;
+ if(opcode==OP13_AR_WRITE&&op13_audio_monitor_pins) {
+  unsigned edges[2]={0},previous[2]={rd(op13_audio_monitor_pins+0x2004)&1,rd(op13_audio_monitor_pins+0x4004)&1};
+  for(unsigned sample=0;sample<100;sample++) {
+   uint64_t start=now_us();
+   while(now_us()-start<500)for(unsigned i=0;i<2;i++) {
+    unsigned current=rd(op13_audio_monitor_pins+(i?0x4004:0x2004))&1;
+    edges[i]+=current!=previous[i];previous[i]=current;
+   }
+   sleep_ms(1);
+  }
+  op13_audio_log("op13-audio-dma: physical PCM edges SD0=%u SD1=%u\n",edges[0],edges[1]);
+ }
+ for(unsigned ms=0;ms<2000&&!stopping&&!link_failed&&!os_atomic_load(&gpr_answered,acquire);ms++)sleep_ms(1);
+ op13_audio_log("op13-audio: APM result opcode=%#x answered=%u error=%#x\n",opcode,
+  os_atomic_load(&gpr_answered,acquire),gpr_error);
+ return os_atomic_load(&gpr_answered,acquire)&&!gpr_error;
+}
+static bool op13_audio_command_to(uint32_t service,uint32_t opcode,uint32_t response,const struct op13_ar_words *body)
+{return op13_audio_send_to(service,opcode,response,body,true);}
+static vm_offset_t op13_audio_dma_memory,op13_audio_dma_tables;
+static uint32_t op13_audio_dma_read(void *c,uint32_t offset)
+{return rd((vm_offset_t)c+offset);}
+static void op13_audio_dma_write(void *c,uint32_t offset,uint32_t value)
+{wr((vm_offset_t)c+offset,value);}
+static void op13_audio_dma_delay(void *c,unsigned us){(void)c;delay(us);}
+static void op13_audio_dma_clean(vm_offset_t memory,vm_size_t bytes)
+{
+ for(vm_offset_t at=memory&~(vm_offset_t)63;at<memory+bytes;at+=64)
+  __asm__ volatile("dc cvac, %0"::"r"(at):"memory");
+ __asm__ volatile("dsb sy":::"memory");
+}
+static bool op13_audio_dma_setup(vm_offset_t smmu,const struct op13_audio_smmu_plan *plan)
+{
+ if(op13_audio_dma_memory||op13_audio_dma_tables)return false;
+ if(kmem_alloc(kernel_map,&op13_audio_dma_memory,round_page(OP13_AUDIO_DMA_BYTES),
+    KMA_KOBJECT|KMA_ZERO|KMA_DATA,VM_KERN_MEMORY_IOKIT)!=KERN_SUCCESS)return false;
+ if(kmem_alloc(kernel_map,&op13_audio_dma_tables,round_page(3*4096),
+    KMA_KOBJECT|KMA_ZERO|KMA_DATA,VM_KERN_MEMORY_IOKIT)!=KERN_SUCCESS)return false;
+ uint64_t physical[3],pages[OP13_AUDIO_DMA_PAGES];
+ for(unsigned i=0;i<3;i++)physical[i]=kvtophys(op13_audio_dma_tables+i*4096);
+ for(unsigned i=0;i<OP13_AUDIO_DMA_PAGES;i++)pages[i]=kvtophys(op13_audio_dma_memory+i*4096);
+ if(op13_audio_smmu_tables((uint64_t (*)[512])op13_audio_dma_tables,physical,pages))return false;
+ op13_audio_dma_clean(op13_audio_dma_memory,OP13_AUDIO_DMA_BYTES);
+ op13_audio_dma_clean(op13_audio_dma_tables,3*4096);
+ struct op13_audio_dma_io io={(void *)smmu,op13_audio_dma_read,op13_audio_dma_write,op13_audio_dma_delay};
+ op13_audio_log("op13-audio-dma: programming private context next; samples still disabled\n");
+ int result=op13_audio_dma_program(&io,plan,physical[0]);
+ op13_audio_log("op13-audio-dma: private mapping result=%d slots=%u,%u context=%u bytes=%u; retained until cold reset\n",
+  result,plan->slots[0],plan->slots[1],plan->context,OP13_AUDIO_DMA_BYTES);
+ return result==0;
+}
+static bool op13_audio_command(uint32_t opcode,const struct op13_ar_words *body)
+{return op13_audio_command_to(1,opcode,0,body);}
+/* One amplifier only during bring-up; the other remains in reset. */
+static vm_offset_t op13_aw_gpio[4];
+static uint32_t op13_aw_cfg[4],op13_aw_data[4];
+static bool op13_aw_lease;
+static struct op13_audio_bus op13_aw_bus;
+static uint32_t op13_aw_gpio_read(void *c,unsigned p,unsigned o)
+{(void)c;return rd(op13_aw_gpio[p]+o);}
+static void op13_aw_gpio_write(void *c,unsigned p,unsigned o,uint32_t v)
+{(void)c;wr(op13_aw_gpio[p]+o,v);}
+static void op13_aw_gpio_delay(void *c,unsigned us){(void)c;delay(us);}
+static int op13_aw_read_register(void *c,uint8_t reg,uint16_t *value)
+{
+ (void)c;uint8_t bytes[2]={0};int r=op13_audio_transfer(&op13_aw_bus,reg,bytes,2,0);
+ if(!r)*value=(uint16_t)(bytes[0]<<8|bytes[1]);return r;
+}
+static int op13_aw_write_register(void *c,uint8_t reg,uint16_t value)
+{
+ (void)c;uint8_t bytes[2]={(uint8_t)(value>>8),(uint8_t)value};
+ return op13_audio_transfer(&op13_aw_bus,reg,bytes,2,1);
+}
+static void op13_audio_amp_finish(void)
+{
+ if(!op13_aw_lease)return;
+ uint16_t ctrl=0;
+ if(!op13_aw_read_register(0,4,&ctrl)) {
+  ctrl|=0x8100u;(void)op13_aw_write_register(0,4,ctrl);delay(5000);
+  ctrl&=~0x2000u;(void)op13_aw_write_register(0,4,ctrl);delay(1000);
+  (void)op13_aw_write_register(0,4,ctrl|3u);
+ }
+ /* Reset is authoritative even if the I2C bus is unavailable. */
+ for(unsigned i=2;i<4;i++)wr(op13_aw_gpio[i]+4,op13_aw_data[i]&~2u);
+ delay(1000);
+ for(unsigned i=0;i<4;i++){
+  wr(op13_aw_gpio[i],op13_aw_cfg[i]&~0x200u);
+  wr(op13_aw_gpio[i]+4,op13_aw_data[i]);wr(op13_aw_gpio[i],op13_aw_cfg[i]);
+ }
+ op13_aw_lease=false;
+ op13_audio_log("op13-audio-amp: reset asserted and original GPIOs restored\n");
+}
+static bool op13_audio_amp_prepare(void)
+{
+ uint64_t bytes=0;bool owned=false;
+ const uint8_t *acf=op13_batt_image_file("fw","aw882xx_acf.bin",&bytes);
+ if(!acf){acf=root_file("aw882xx_acf.bin",&bytes);owned=acf!=NULL;}
+ struct op13_aw_profile profile;
+ if(!acf){op13_audio_log("op13-audio-amp: native ACF missing from RAM image\n");return false;}
+ int parsed=op13_aw_music_profile(acf,(size_t)bytes,0,&profile);
+ if(parsed){op13_audio_log("op13-audio-amp: ACF validation failed=%d\n",parsed);file_free(acf,bytes,owned);return false;}
+ const uint32_t physical[4]={0x0f148000,0x0f149000,0x0f102000,0x0f1a4000};
+ for(unsigned i=0;i<4;i++){
+  op13_aw_gpio[i]=ml_io_map(physical[i],4096);
+  if(!op13_aw_gpio[i]){op13_audio_log("op13-audio-amp: GPIO mapping unavailable\n");file_free(acf,bytes,owned);return false;}
+  op13_aw_cfg[i]=rd(op13_aw_gpio[i]);op13_aw_data[i]=rd(op13_aw_gpio[i]+4);
+ }
+ if((op13_aw_data[2]|op13_aw_data[3])&2){op13_audio_log("op13-audio-amp: existing reset lease not idle; refusing\n");file_free(acf,bytes,owned);return false;}
+ op13_aw_lease=true;
+ for(unsigned i=2;i<4;i++){
+  wr(op13_aw_gpio[i]+4,op13_aw_data[i]&~2u);
+  wr(op13_aw_gpio[i],(op13_aw_cfg[i]&~0x3ffu)|0x200u|((op13_aw_cfg[i]&(1u<<11))?(1u<<12):0));
+ }
+ delay(1000);wr(op13_aw_gpio[2]+4,op13_aw_data[2]|2u);delay(2000);
+ op13_aw_bus=(struct op13_audio_bus){.cookie=0,.address=0x34,.read=op13_aw_gpio_read,
+  .write=op13_aw_gpio_write,.delay=op13_aw_gpio_delay};
+ struct op13_aw_io io={0,op13_aw_read_register,op13_aw_write_register};
+ int result=op13_aw_prepare_muted(&io,&profile);file_free(acf,bytes,owned);
+ op13_audio_log("op13-audio-amp: native muted profile result=%d address=0x34; no amplifier start\n",result);
+ if(result){op13_audio_amp_finish();return false;}return true;
+}
+static bool op13_audio_amp_start_quiet(void)
+{
+ if(!op13_aw_lease)return false;
+ struct op13_aw_io io={0,op13_aw_read_register,op13_aw_write_register};
+ int result=op13_aw_start_quiet(&io,op13_aw_gpio_delay,0);
+ op13_audio_log("op13-audio-amp: quiet start result=%d; minimum extra attenuation36dB\n",result);
+ return result==0;
+}
+/* Queued periods follow the working OnePlus8 feeder pattern; wire protocol
+ * remains native AudioReach. Each period has its own owned4KiB page/token. */
+static bool op13_audio_queue_period(unsigned period,unsigned sequence)
+{
+ int16_t *samples=(int16_t *)(op13_audio_dma_memory+period*4096);
+ for(unsigned frame=0;frame<960;frame++) {
+  unsigned absolute=sequence*960+frame,p=absolute%96;
+  int32_t value=((int32_t)(p<48?p:96-p)-24)*8192/24;
+  unsigned fade=absolute<47999-absolute?absolute:47999-absolute;if(fade>240)fade=240;
+  value=value*(int32_t)fade/240;samples[2*frame]=samples[2*frame+1]=(int16_t)value;
+ }
+ op13_audio_dma_clean((vm_offset_t)samples,3840);
+ struct op13_ar_words body;if(!op13_ar_write_period(&body,gpr_audio_map_handle,period))return false;
+ struct {struct gpr_header h;uint32_t body[11];} packet={0};
+ packet.h=(struct gpr_header){(68u<<8)|(6u<<4),0x0302,1,0x6000,
+  0x80000000u|(sequence<<3)|period,OP13_AR_WRITE};
+ memcpy(packet.body,body.data,44);
+ os_atomic_store(&op13_audio_queue_tokens[period],packet.h.token,release);
+ return glink_send(&glink.channel[CHANNEL_GPR],&packet,sizeof(packet))==0;
+}
+static bool op13_audio_queued_tone(void)
+{
+ unsigned sent=0,done=0,edges[4]={0},previous[4]={0};
+ const unsigned offsets[4]={0x1004,0x2004,0x3004,0x4004};
+ for(unsigned i=0;i<4;i++)previous[i]=rd(op13_audio_monitor_pins+offsets[i])&1;
+ os_atomic_store(&op13_audio_queue_returned,0,relaxed);os_atomic_store(&op13_audio_queue_error,0,relaxed);
+ os_atomic_store(&op13_audio_queue_active,true,release);
+ uint64_t start=now_us();
+ for(unsigned p=0;p<8;p++){
+  if(!op13_audio_queue_period(p,sent++))goto out;
+ }
+ if(!op13_audio_amp_start_quiet())goto out;
+ while(done<50&&!stopping&&!link_failed&&now_us()-start<4000000) {
+  if(os_atomic_load(&op13_audio_queue_error,acquire))break;
+  uint32_t returned=os_atomic_xchg(&op13_audio_queue_returned,0,acq_rel);
+  for(unsigned p=0;p<8;p++)if(returned&(1u<<p)){
+   os_atomic_store(&op13_audio_queue_tokens[p],0,release);
+   done++;if(sent<50&&!op13_audio_queue_period(p,sent++))goto out;
+  }
+  uint64_t sample=now_us();
+  while(now_us()-sample<500)for(unsigned i=0;i<4;i++){
+   unsigned current=rd(op13_audio_monitor_pins+offsets[i])&1;edges[i]+=current!=previous[i];previous[i]=current;
+  }
+  sleep_ms(1);
+ }
+out:
+ os_atomic_store(&op13_audio_queue_active,false,release);
+ op13_audio_log("op13-audio-queue: periods sent=%u done=%u error=%u frames=%u elapsed-ms=%llu\n",
+  sent,done,op13_audio_queue_error,done*960,(now_us()-start)/1000);
+ op13_audio_log("op13-audio-queue: physical edges BCLK=%u SD0=%u WS=%u SD1=%u\n",edges[0],edges[1],edges[2],edges[3]);
+ sleep_ms(200);return done==50&&!op13_audio_queue_error;
+}
+static void op13_audio_graph_probe(unsigned phase)
+{
+ struct op13_ar_words body;
+ if(!op13_ar_graph_open(&body))return;
+ bool opened=op13_audio_command(OP13_AR_OPEN,&body);
+ if(!opened){op13_audio_log("op13-audio: graph open failed; no playback/DMA/amplifier activation\n");return;}
+ if(phase>=3) {
+  bool configured=false,core=false,clock=false,started=false;
+  vm_offset_t pins=0;uint32_t saved[4]={0};bool owned=false;
+  unsigned sd_line=0;PE_parse_boot_argn("op13_audio_sd",&sd_line,sizeof(sd_line));if(!sd_line)sd_line=1;
+  if(!(sd_line==1?op13_ar_sink_config(&body):op13_ar_sink_config_line(&body,sd_line)))goto clock_done;
+  op13_audio_log("op13-audio: secondary MI2S data line=%u (SD0=1,SD1=2)\n",sd_line);
+  if(!op13_audio_command(0x01001006,&body))goto clock_done;
+  op13_ar_media(&body);
+  if(!op13_audio_command_to(0x6000,0x01001006,0,&body))goto clock_done;
+  configured=true;op13_ar_prm_core(&body);
+  if(!op13_audio_command_to(2,0x0100100f,0x02001002,&body))goto clock_done;
+  core=true;op13_ar_prm_clock(&body,1);
+  if(!op13_audio_command_to(2,0x0100100f,0x02001002,&body))goto clock_done;
+  clock=true;pins=ml_io_map(0x0f178000,0x8000);
+  if(phase>=8)op13_audio_monitor_pins=pins;
+  if(!pins)goto clock_done;
+  for(unsigned i=0;i<4;i++)saved[i]=rd(pins+(i+1)*0x1000);
+  owned=true;
+  for(unsigned i=0;i<4;i++)wr(pins+(i+1)*0x1000,(saved[i]&~0x3ffu)|4u|64u|(i==3?1u:0u)|((saved[i]&0x800)?0x1000:0));
+  op13_ar_graph_close(&body);
+  if(!op13_audio_command(0x01001001,&body))goto clock_done;
+  if(!op13_audio_command(0x01001002,&body))goto clock_done;
+  started=true;
+  unsigned edges_bclk=0,edges_ws=0;uint32_t prev_b=rd(pins+0x1004)&1,prev_w=rd(pins+0x3004)&1;
+  uint64_t began=now_us();
+  while(now_us()-began<20000) {
+   uint32_t b=rd(pins+0x1004)&1,w=rd(pins+0x3004)&1;
+   edges_bclk+=b!=prev_b;edges_ws+=w!=prev_w;prev_b=b;prev_w=w;
+  }
+  op13_audio_log("op13-audio: secondary MI2S20ms observed BCLK edges=%u WS edges=%u; amplifiers reset\n",edges_bclk,edges_ws);
+  if(phase>=4) {
+   vm_offset_t smmu=ml_io_map(0x15000000,0x100000);
+   if(!smmu)goto clock_done;
+   op13_audio_log("op13-audio-smmu: native about to read IDR0 after LPASS core/clock vote; no SMMU writes\n");
+   uint32_t idr0=rd(smmu+0x20);
+   op13_audio_log("op13-audio-smmu: native IDR0=%#x\n",idr0);
+   uint32_t idr1=rd(smmu+0x24),idr2=rd(smmu+0x28),scr=rd(smmu);
+   op13_audio_log("op13-audio-smmu: native IDR1=%#x IDR2=%#x SCR0=%#x\n",idr1,idr2,scr);
+   struct op13_audio_smmu_plan plan={0};
+   if(op13_audio_smmu_geometry(scr,idr0,idr1,&plan)||!(idr0&(1u<<30))||!(idr2&(1u<<12)))goto clock_done;
+   uint32_t smr[256]={0},s2cr[256]={0},sctlr[256]={0};
+   for(unsigned i=0;i<plan.matches;i++) {
+    smr[i]=rd(smmu+0x800+4*i);s2cr[i]=rd(smmu+0xc00+4*i);
+    if(smr[i]>>31)op13_audio_log("op13-audio-smmu: occupied SMR%u=%#x S2CR=%#x\n",i,smr[i],s2cr[i]);
+   }
+   /* Never read an occupied context: protected display contexts can abort
+    * the AP. Determine ownership from SMR/S2CR before any CB access. */
+   uint8_t used[256]={0};
+   for(unsigned i=0;i<plan.matches;i++)if(smr[i]>>31)used[s2cr[i]&255]=1;
+   for(unsigned i=0;i<256;i++)sctlr[i]=~0u;
+   for(unsigned i=plan.first_context;i<plan.contexts;i++)if(!used[i]) {
+    op13_audio_log("op13-audio-smmu: reading unused context=%u only\n",i);
+    sctlr[i]=rd(smmu+(plan.pages+i)*plan.page);
+    if(sctlr[i]!=~0u&&!(sctlr[i]&1))break;
+   }
+   int chosen=op13_audio_smmu_choose(&plan,smr,s2cr,sctlr);
+   op13_audio_log("op13-audio-smmu: native plan=%d slots=%u,%u context=%u; read-only survey\n",chosen,plan.slots[0],plan.slots[1],plan.context);
+   if(phase>=5&&!chosen&&op13_audio_dma_setup(smmu,&plan)) {
+    if(phase>=6) {
+     op13_ar_map(&body);
+     bool mapped=op13_audio_send_to(1,OP13_AR_MAP,OP13_AR_MAP_REPLY,&body,false);
+     mapped=mapped&&gpr_value!=0;
+     if(mapped)gpr_audio_map_handle=gpr_value;
+     op13_audio_log("op13-audio-dma: DSP map=%u handle=%#x\n",mapped,gpr_audio_map_handle);
+     bool amp_prepared=phase<7||(mapped&&op13_audio_amp_prepare());
+     bool can_write=mapped&&amp_prepared;
+     if(can_write&&phase==9) {
+      bool queued=op13_audio_queued_tone();
+      op13_audio_log("op13-audio-queue: finite playback complete=%u\n",queued);can_write=false;
+     }
+     if(can_write&&phase>=8) {
+      can_write=op13_audio_quiet_tone((int16_t *)op13_audio_dma_memory,OP13_AUDIO_DMA_BYTES)==0;
+      op13_audio_dma_clean(op13_audio_dma_memory,OP13_AUDIO_DMA_BYTES);
+      if(can_write)can_write=op13_audio_amp_start_quiet();
+     }
+     if(can_write&&op13_ar_write_silence(&body,gpr_audio_map_handle)) {
+      for(unsigned repeat=0;repeat<(phase>=8?6u:1u);repeat++) {
+       bool consumed=op13_audio_send_to(0x6000,OP13_AR_WRITE,OP13_AR_WRITE_REPLY,&body,false);
+       op13_audio_log("op13-audio-dma: %s sample consumed=%u bytes=19200 status=%#x\n",phase>=8?"tone":"silent",consumed,gpr_error);
+       if(!consumed)break;
+       if(phase>=8)sleep_ms(repeat<5?100:20);
+      }
+     }
+    }
+    op13_audio_log("op13-audio-dma: context FSR=%#x global GFSR=%#x\n",
+     rd(smmu+(plan.pages+plan.context)*plan.page+0x58),rd(smmu+0x48));
+   }
+  }
+clock_done:
+  op13_audio_monitor_pins=0;
+  op13_audio_amp_finish();
+  if(started){op13_ar_graph_close(&body);op13_audio_command(0x01001003,&body);}
+  op13_audio_log("op13-audio: media=%u core=%u clock=%u started=%u; amplifier playback disabled\n",configured,core,clock,started);
+  op13_ar_graph_close(&body);bool graph_closed=op13_audio_command(OP13_AR_CLOSE,&body);
+  if(graph_closed&&gpr_audio_map_handle) {
+   body.count=0;body.failed=0;op13_ar_word(&body,gpr_audio_map_handle);
+   bool unmapped=op13_audio_send_to(1,OP13_AR_UNMAP,0,&body,false);
+   op13_audio_log("op13-audio-dma: DSP unmap=%u; host allocations retained until reset\n",unmapped);
+   if(unmapped)gpr_audio_map_handle=0;
+  }
+  if(clock){op13_ar_prm_clock(&body,0);op13_audio_command_to(2,0x01001010,0x02001003,&body);}
+  if(core){op13_ar_prm_core(&body);op13_audio_command_to(2,0x01001010,0x02001003,&body);}
+  if(owned)for(unsigned i=0;i<4;i++)wr(pins+(i+1)*0x1000,saved[i]);
+  return;
+ }
+ if(!op13_ar_graph_close(&body))return;
+ bool closed=op13_audio_command(OP13_AR_CLOSE,&body);
+ op13_audio_log("op13-audio: graph probe open=%u close=%u; no playback/DMA/amplifier activation\n",opened,closed);
 }
 static uint32_t option(const char *name) { uint32_t n=0; PE_parse_boot_argn(name,&n,sizeof(n)); return n; }
 #define BATTMGR_OWNER           32778
@@ -2499,6 +2864,15 @@ adsp_thread(__unused void *parameter, __unused wait_result_t result)
  if (stopping || !step_queues() || !step_link()) { goto fail; }
  if (mode >= 3) {
   battmgr_start();
+  if (option("op13_audio") >= 1 && option("op13_audio") <= 9) {
+   bool ready = step_gpr();
+   char line[160];
+   snprintf(line,sizeof(line),"op13-audio: AudioReach SPF ready=%u GPR in=%u out=%u state=%u error=%#x\n",
+       ready,gpr_in,gpr_out,gpr_state,gpr_error);
+   for(const char *c=line;*c;c++)loader_log_putc(*c);
+   printf("%s",line);
+   if(ready&&option("op13_audio")>=2)op13_audio_graph_probe(option("op13_audio"));
+  }
   success = true;
   printf("op13-battery: firmware and PMIC GLINK started; awaiting valid live samples\n");
   lck_mtx_unlock(&dsp_lock);
@@ -2585,19 +2959,10 @@ op13_batt_adsp_init(void)
  PE_parse_boot_argn("op13_usb", &usb_live, sizeof(usb_live));
  bool normal_profile = cpus == 8 && boot == 0 && usb_live == 0;
  bool usb_profile = cpus == 7 && boot == 6 && usb_live == 1;
- uint32_t gpu_stage = 0, gpu_keep = 0, gpu_return = 0;
- PE_parse_boot_argn("adreno8", &gpu_stage, sizeof(gpu_stage));
- PE_parse_boot_argn("adreno8_keep", &gpu_keep, sizeof(gpu_keep));
- PE_parse_boot_argn("adreno8_return", &gpu_return, sizeof(gpu_return));
- /* Isolated GLES profile retains CPU0 for firmware USB, as the v3 donor.
-  * The native battery transport does not use the GPU's separate SMMU.
-  */
- bool gles_profile = cpus == 7 && boot == 1 && usb_live == 1 && gl == 1 &&
-     gpu_stage == 23 && gpu_keep == 1 && gpu_return == 0;
- bool interactive = mode == 4 && (((normal_profile || usb_profile) && gl == 0) || gles_profile) &&
+ bool interactive = mode == 4 && (normal_profile || usb_profile) && gl == 0 &&
      deadline == 0 && return_after == 0;
  if (!diagnostic && !interactive) {
-  printf("op13-battery: require timed CPU6 diagnostic or matched interactive RAM profile\n");
+  printf("op13-battery: require timed CPU6 diagnostic or matched gl=0 interactive RAM profile\n");
   mode = 0; return;
  }
  new_from = ~0u;

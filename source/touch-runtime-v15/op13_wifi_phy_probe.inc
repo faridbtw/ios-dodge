@@ -3,20 +3,12 @@
  * Resource retention is intentional: leave this probe by cold reset only.
  */
 #include "op13_wifi_phy_data.h"
-#include "op13_wifi_cesta_hw.h"
-static void op13_wifi_hw_write(void *c,uint32_t o,uint32_t v)
-{
- (void)c;
- if(!((o<=16&&!(o&3)&&(v==0||v==2))||(o==0x374&&v==1)))return;
- print("op13-wifi-hw-map: write offset=%x value=%x\n",(uint64_t)o,(uint64_t)v);
- *(volatile uint32_t *)(uintptr_t)(0x1d01000u+o)=v;__asm__ volatile("dsb sy":::"memory");
-}
 static int op13_wifi_phy_ready,op13_wifi_phy_fault;
 static int op13_wifi_phy_address(uint32_t a)
 {
  if(a&3)return 0;
  if(a>=0x01c06000&&a<0x01c08000)return 1;
- if(a==0x0016b080||a==0x0016b000||a==0x0016c01c||a==0x0f166000||a==0x0f166004)return 1;
+ if(a==0x0016b000||a==0x0016c01c||a==0x0f166000||a==0x0f166004)return 1;
  if(a==0x01c00000||a==0x01c00040||a==0x01c01000||a==0x01c00174)return 1;
  if(a>=0x01d07000&&a<0x01d07034)return 1;
  if(a>=0x01d08000&&a<0x01d0801c)return 1;
@@ -85,14 +77,6 @@ static void op13_wifi_phy_probe(void)
  print("op13-wifi-phy: Gen1 vote result=%x current-perf=%x\n",(uint64_t)(int64_t)ret,
   (uint64_t)op13_wifi_crm_read(0,OP13_CRM_CURRENT_PERF));
  if(ret)return;
- struct op13_cesta_io hwio={0,op13_wifi_crm_read,op13_wifi_hw_write,op13_wifi_crm_delay};
- print("op13-wifi-hw-map: before busy=%x update=%x power-index=%x\n",
-  (uint64_t)op13_wifi_crm_read(0,0x370),(uint64_t)op13_wifi_crm_read(0,0x374),(uint64_t)op13_wifi_crm_read(0,0x37c));
- int hwret=op13_cesta_hw_gen1(&hwio);
- print("op13-wifi-hw-map: result=%d busy=%x update=%x power-index=%x\n",(uint64_t)(int64_t)hwret,
-  (uint64_t)op13_wifi_crm_read(0,0x370),(uint64_t)op13_wifi_crm_read(0,0x374),(uint64_t)op13_wifi_crm_read(0,0x37c));
- if(hwret)return;
-
  for(unsigned i=0;i<3;i++) {
   s=p->enable(p,ids[i]);print("op13-wifi-phy: enable %s status=%x\n",names[i],s);
   if(EFI_ERROR(s))return;
@@ -116,12 +100,6 @@ static void op13_wifi_phy_probe(void)
  }
  BS->stall(1000);
  print("op13-wifi-phy:128 PHY configuration writes completed\n");
- /* Vendor gcc-sun.c: PIPE mux at GCC+6b080 selects PHY with value0,
-  * TCXO with value2. The PHY must supply the actual PCIe PIPE clock. */
- print("op13-wifi-phy: PIPE source before=%x\n",(uint64_t)op13_wifi_phy_read(0x0016b080));
- op13_wifi_phy_update(0x0016b080,3,0);
- print("op13-wifi-phy: PIPE source after=%x\n",(uint64_t)op13_wifi_phy_read(0x0016b080));
- if(op13_wifi_phy_fault)return;
  s=p->enable(p,ids[3]);print("op13-wifi-phy: PIPE enable status=%x\n",s);
  if(EFI_ERROR(s))return;
  uint32_t status=0xffffffffu;

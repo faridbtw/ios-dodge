@@ -107,3 +107,7 @@ Retain the original notices in every source subtree. The kernel project and XNU 
   matching images and firmware are required by the pinned RAM boot helper.
 - Details/build/test notes: `source/wifi-peach/WORKING.md`;
   sanitized evidence: `validation/wifi/STATUS.json`.
+
+## iOS 27 source snapshot (4 November 2026)
+
+`source/ios27` preserves the current local XNU 12377.121.6 port and Project Boot loader, plus adapted userland and GPU sources. Pinned GPU upstreams are in `source/ios27/UPSTREAM.json`; original source licenses remain alongside the code. The selected frontend retains the faster mirror path and advisory working-set limits. Source changes include the native EDR startup, InputUI job loading, PosterBoard Metal enablement, ADSP battery ownership/IOPS reporting and status-bar geometry. Sanitized outcomes are under `validation/ios27`; unresolved experiments are explicitly identified. Firmware, Apple runtimes, SDKs and raw logs are excluded.

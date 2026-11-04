@@ -1,0 +1,18 @@
+{
+  "date": "2026-11-04",
+  "scope": "source export; no phone boot for publishing",
+  "checks": {
+    "battery_wire": "passed: vendor IDs, GET-only requests, malformed replies, sample boundaries",
+    "python_syntax": "22 updated/build scripts parsed",
+    "validation_json": "parsed",
+    "status_layout_arm64e_compile": "passed against local iPhoneOS27.2 SDK",
+    "excluded_artifact_scan": "no APFS/IPSW/firmware images, Mach-O binaries or credential patterns staged"
+  },
+  "limitations": [
+    "No fresh kernel or GPU runtime test performed for this export",
+    "Upstream source whitespace preserved; git diff --check reports upstream whitespace",
+    "Build inputs and generated runtime artifacts are deliberately excluded",
+    "Clock remains missing; no replacement overlay implemented"
+  ],
+  "phone_contacted": false
+}

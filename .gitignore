@@ -49,3 +49,13 @@ venv/
 /source/wifi-peach/darwin-ath12k-v2/out/
 *.dSYM/
 *.err
+
+# iOS27 inputs and generated artifacts remain local.
+*.dmg
+*.aea
+*.metallib
+*.air
+*.bc
+*.spv
+/source/ios27/**/BUILD/
+/source/ios27/**/target/

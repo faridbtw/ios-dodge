@@ -1,0 +1,12 @@
+{
+  "status": "wallpaper-visible-selection-still-fails",
+  "stock_posterboard_submit_ok": false,
+  "provider_device_open": true,
+  "provider_draws_nonblack": true,
+  "home_wallpaper_visible_capture": "screen.png",
+  "native_edr_start_us": 9246,
+  "normal_renderer_flags": true,
+  "known_issue": "Transient missing bands during animations deferred by user",
+  "manual_comparison_pending": false,
+  "user_feedback": "Wallpaper visible; selection still fails"
+}

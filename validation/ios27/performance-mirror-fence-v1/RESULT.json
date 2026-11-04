@@ -1,0 +1,10 @@
+{
+  "status": "tested-not-a-fix",
+  "user_feedback": "Black patches remain; still faster",
+  "gpu_correctness": true,
+  "mirror_waits_last": "875 failures=0",
+  "edr_timeout_lines": 0,
+  "hypothesis": "CPU mirror overwrite during prior GPU reads",
+  "result": "Reader synchronization alone does not eliminate transient black bands. Preserve service speed fixes.",
+  "video": "LOCAL_HOME/Downloads/IMG_0698.MOV"
+}

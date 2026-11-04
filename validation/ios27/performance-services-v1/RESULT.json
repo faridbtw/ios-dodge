@@ -1,0 +1,17 @@
+{
+  "native_edr_start_returned_us": 7894,
+  "native_inputui_job_submit_result": 0,
+  "edr_timeouts_in_capture": 0,
+  "missing_inputui_errors_in_capture": 0,
+  "presented_frames_per_second_observed_windows": [
+    38,
+    35,
+    39,
+    11,
+    9
+  ],
+  "not_a_controlled_scrolling_benchmark": true,
+  "user_report": "Way faster, but graphical glitches",
+  "glitch_type": "pending clarification",
+  "cpu_governor": false
+}

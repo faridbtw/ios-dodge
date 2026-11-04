@@ -1,0 +1,22 @@
+[
+  {
+    "path": "nativemetal",
+    "commit": "c6d29caad6d880cc8204ebe3bc34d77479a3255d",
+    "remote": "https://github.com/UniXNU/AdrenoMetal.git"
+  },
+  {
+    "path": "adrenopm4",
+    "commit": "282606b528b2595bc4274ea7490b62b323f35a5f",
+    "remote": "https://github.com/UniXNU/AdrenoPM4.git"
+  },
+  {
+    "path": "metal2vulkan",
+    "commit": "748a605b11dae76f021466d3bc94f87b1b7d67dc",
+    "remote": "https://github.com/steelbrain/metal2vulkan.git"
+  },
+  {
+    "path": "mesa",
+    "commit": "85fda3b36405bcaea8bffc64aa4f2651dc90770d",
+    "remote": "https://github.com/mesa/mesa.git"
+  }
+]

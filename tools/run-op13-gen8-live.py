@@ -15,8 +15,10 @@ LOADER_HASH = '29f2d04a2db4a684d6436564e3f3a916fbde01bb7081a9604882665b4052a86e'
 
 
 def main():
+    global LOADER, LOADER_HASH
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--serial', required=True)
+    parser.add_argument('--audio-probe', action='store_true', help='Use the bounded amplifier query loader and AudioReach graph probe')
     parser.add_argument('--battery-probe', action='store_true', help='Run a OnePlus13 ADSP battery diagnostic instead of a GPU probe')
     parser.add_argument('--reuse-armed-loader', action='store_true', help='Recover only a documented touch-runtime command-line refusal with its existing lease')
     parser.add_argument('--payload', type=Path, required=True)
@@ -25,6 +27,22 @@ def main():
     payload = args.payload.resolve()
     entries = runpy.run_path(str(ROOT / 'tools/make-op13-test-payload.py'))['unpack'](payload.read_bytes())
     boot = dict(t.split('=', 1) for t in entries['cmdline'].rstrip(b'\0').decode().split())
+    if args.audio_probe:
+        if not args.battery_probe or boot.get('op13_audio') not in ['2','3','4','5','6','7','8','9'] or args.reuse_armed_loader:
+            raise SystemExit('Audio probe requires a fresh timed battery phase3/graph test')
+        LOADER = ROOT / 'experimental/audio/turtle-diagnostic-v1/dodge-audio-uefi.img'
+        manifest = json.loads(LOADER.with_suffix('.json').read_text())
+        assert manifest['image_sha256'] == hashlib.sha256(LOADER.read_bytes()).hexdigest()
+        assert manifest['loader_executables_unchanged'] and manifest['other_inner_ffs_unchanged']
+        assert manifest['changed_inner_ffs'] == ['7bb28b99-61bb-11d5-9a5d-0090273fc14d']
+        base = (ROOT / manifest['source']).resolve()
+        assert base.is_relative_to(ROOT.resolve())
+        assert hashlib.sha256(base.read_bytes()).hexdigest() == manifest['source_sha256']
+        packaging = json.loads(base.with_suffix('.json').read_text())
+        assert packaging['image_sha256'] == manifest['source_sha256']
+        assert packaging['source_sha256'] == 'f26410ca510dcb7352f5c0b814ca435aaefe05bdc3ed1697ef5091b79d588cb8'
+        assert all(packaging[k] for k in ['other_ffs_unchanged','bootshim_unchanged','dtb_unchanged','ramdisk_and_signature_bytes_unchanged'])
+        LOADER_HASH = manifest['image_sha256']
     if len(entries['cmdline'].rstrip(b'\0')) > 416:
         raise SystemExit('Command line exceeds the loader touch-lease budget')
     for key in ['gpu', 'adreno', 'metal', 'gl', 'ufs', 'ufs_write', 'var_store', 'cpufreq', 'wifi', 'adsp']:
@@ -51,6 +69,9 @@ def main():
     if hashlib.sha256(LOADER.read_bytes()).hexdigest() != LOADER_HASH:
         raise SystemExit('Unexpected diagnostic loader image')
     build = json.loads((payload.parent / 'BUILD.json').read_text())
+    if build.get('invalid'):raise SystemExit('This diagnostic artifact is marked invalid')
+    if boot.get('op13_audio_sd')=='2' and b'secondary MI2S data line=' not in entries['kernel']:
+        raise SystemExit('Kernel lacks selectable MI2S data line support')
     if build['payload_sha256'] != hashlib.sha256(payload.read_bytes()).hexdigest():
         raise SystemExit('Payload differs from its build manifest')
     out = args.output.resolve(); out.mkdir(parents=True, exist_ok=False)
@@ -76,6 +97,8 @@ def main():
             argv in [['stage', str(payload)], ['stage', str(ROOT / 'system.apfs')],
                 ['boot', str(LOADER)], ['oem', 'ramdisk'], ['oem', 'sm8750-touch-arm'],
                 ['oem', 'run', '0'], ['oem', 'log'], ['oem','sm8750-touch-cleanup'], ['oem','sm8750-touch-status']])
+        if args.audio_probe and argv == ['oem','op13-audio-amp-query']: allowed = True
+        if args.audio_probe and boot.get('op13_audio') in ['4','5','6','7','8','9'] and argv == ['oem','op13-audio-cold-reset']: allowed = True
         if not allowed: raise ValueError('Unexpected fastboot operation')
         return command(['fastboot', '-s', serial, *argv], timeout, check)
 
@@ -121,6 +144,13 @@ def main():
         fb(['oem','sm8750-touch-arm'],15)
         print('Shortened payload staged; resident root retained and touch lease rearmed after cleanup', flush=True)
     else:
+        if args.audio_probe:
+            try:
+                fb(['oem','op13-audio-amp-query'])
+            except subprocess.CalledProcessError:
+                print('Amplifier identity incomplete; continuing only the silent graph open/close probe', flush=True)
+            finally:
+                fb(['oem','log']); fb(['get_staged',str(out/'amplifiers.log')])
         fb(['stage', str(payload)], 15)
         fb(['oem', 'ramdisk'])
         fb(['stage', str(ROOT / 'system.apfs')], 120)
@@ -131,6 +161,8 @@ def main():
     deadline = time.monotonic() + reset + 10
     last = None
     index = 0
+    smmu_wait_since = None
+    smmu_forced_reset = False
     while time.monotonic() < deadline:
         time.sleep(0.7)
         try:
@@ -139,7 +171,17 @@ def main():
             fb(['oem', 'log'])
             path = out / f'live-{index:03d}.log'; index += 1
             fb(['get_staged', str(path)])
-            if path.exists(): last = path
+            if path.exists() and path.stat().st_size:
+                last = path
+                capture = path.read_text(errors='replace')
+                if (('native about to read IDR0' in capture and 'native IDR0=' not in capture) or
+                    ('programming private context next' in capture and 'private mapping result=' not in capture)):
+                    if smmu_wait_since is None: smmu_wait_since = time.monotonic()
+                    if time.monotonic() - smmu_wait_since > 6:
+                        print('Native SMMU read did not complete; issuing diagnostic cold reset', flush=True)
+                        fb(['oem','op13-audio-cold-reset'])
+                        smmu_forced_reset = True
+                        break
         except (subprocess.TimeoutExpired, subprocess.CalledProcessError):
             # A live loader can temporarily be busy during power/MMIO operations.
             # Keep retrying within the explicit reset deadline to retain later logs.
@@ -147,7 +189,7 @@ def main():
     if last:
         log = last.read_text(errors='replace')
         (out / 'last-kernel.log').write_bytes(last.read_bytes())
-        lines = [l for l in log.splitlines() if l.startswith('adreno8:')]
+        lines = [l for l in log.splitlines() if l.startswith(('adreno8:', 'op13-audio:'))]
         print('\n'.join(lines[-18:]), flush=True)
     else: log = ''
     recovered = False
@@ -168,6 +210,18 @@ def main():
     battery_ok = (len(live_samples) >= 2 if boot.get('op13_batt') == '3' else f"op13-battery: phase {boot.get('op13_batt', '0')} passed" in log)
     result = {'requested_stage': int(boot.get('adreno8', '0')),
         'battery_probe_phase': int(boot.get('op13_batt', '0')),
+        'audio_spf_ready': 'AudioReach SPF ready=1' in log,
+        'audio_graph_roundtrip_passed': 'graph probe open=1 close=1' in log,
+        'audio_clock_probe_started': 'media=1 core=1 clock=1 started=1' in log,
+        'native_smmu_read_forced_reset': smmu_forced_reset,
+        'native_smmu_read_completed': 'native IDR0=' in log,
+        'audio_phase': int(boot.get('op13_audio','0')),
+        'audio_private_mapping_ready': 'private mapping result=0' in log,
+        'audio_dsp_mapping_ready': 'DSP map=1' in log,
+        'audio_muted_amp_profile_ready': 'native muted profile result=0' in log,
+        'audio_quiet_amp_started': 'quiet start result=0' in log,
+        'audio_tone_sample_consumed': 'tone sample consumed=1' in log,
+        'audio_silent_sample_consumed': 'silent sample consumed=1' in log,
         'battery_probe_passed': battery_ok,
         'battery_live_samples': live_samples,
         'direct_power_probe_only': boot.get('a8_direct') == '1',
@@ -176,7 +230,7 @@ def main():
         'direct_ring_cp_init_completed': 'direct-ring CP_ME_INIT consumed 10/10 and idle' in log,
         'raw_nop_probe_only': boot.get('a8_nop', boot.get('adreno8_raw_nop_probe')) == '1',
         'raw_nop_acknowledged_and_idle': 'RAW NOP acknowledged and idle' in log,
-        'requested_stage_completed': (battery_ok if args.battery_probe else f"adreno8: {boot['adreno8']}: completed" in log),
+        'requested_stage_completed': (('finite playback complete=1' in log if boot.get('op13_audio')=='9' else ('quiet start result=0' in log and 'tone sample consumed=1' in log) if boot.get('op13_audio')=='8' else ('native muted profile result=0' in log and 'silent sample consumed=1' in log) if boot.get('op13_audio')=='7' else 'silent sample consumed=1' in log if boot.get('op13_audio')=='6' else 'private mapping result=0' in log if boot.get('op13_audio')=='5' else 'native plan=0' in log if boot.get('op13_audio')=='4' else 'media=1 core=1 clock=1 started=1' in log if boot.get('op13_audio')=='3' else 'graph probe open=1 close=1' in log) if args.audio_probe else battery_ok if args.battery_probe else f"adreno8: {boot['adreno8']}: completed" in log),
         'estimated_reset_after_seconds': round(recovery_elapsed - android_uptime, 2) if recovered else None,
         'completed_stages': sorted(set(map(int, re.findall(r'adreno8: (\d+): completed', log)))),
         'failed_stages': sorted(set(map(int, re.findall(r'adreno8: (\d+): FAILED', log)))),

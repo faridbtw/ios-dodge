@@ -1,0 +1,10 @@
+{
+  "vulkan_passed": true,
+  "metal_passed": true,
+  "actual_adreno_830": true,
+  "compute_wrong_words": 0,
+  "padded_surface_checks_passed": true,
+  "submission_170_streams_wrong": 0,
+  "metal_ui_tested": false,
+  "log_sha256": "5e51dc6a80fc437bb37014ddebaa014fe8129a81f8dc5fa4fffa1a2a60c35a6c"
+}

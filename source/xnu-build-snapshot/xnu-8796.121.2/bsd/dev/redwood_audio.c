@@ -335,8 +335,6 @@ audio_recording_init(void)
 	    loader_sound[0]);
 }
 
-extern void op13_screen_init(void);
-
 void
 redwood_audio_init(void)
 {
@@ -352,6 +350,5 @@ redwood_audio_init(void)
 	redwood_speaker_init();
 	redwood_haptic_init();
 	redwood_torch_init();
-	op13_screen_init();
 	redwood_camera_init();
 }

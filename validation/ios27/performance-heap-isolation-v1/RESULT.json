@@ -1,0 +1,14 @@
+{
+  "status": "tested-not-a-fix",
+  "metal_correctness_pass": true,
+  "isolated_heap_allocations_seen": [
+    "gpu2-metal[backboardd 11]: heap isolation standalone textures=5701 failures=0",
+    "gpu2-metal[backboardd 11]: heap isolation standalone textures=5801 failures=0",
+    "gpu2-metal[backboardd 11]: heap isolation standalone textures=5901 failures=0"
+  ],
+  "native_edr_start_us": 8418,
+  "edr_timeout_lines": 0,
+  "hypothesis": "Automatic texture heap alias reuse during animations",
+  "diagnostic_only": true,
+  "user_feedback": "Black band still appears"
+}

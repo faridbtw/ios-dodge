@@ -10,12 +10,9 @@ def sha(p):
  with p.open('rb') as f:return hashlib.file_digest(f,'sha256').hexdigest()
 
 def main():
- p=argparse.ArgumentParser(description=__doc__);p.add_argument('--output',type=Path,required=True)
- p.add_argument('--system',type=Path,default=ROOT/'system.apfs')
- p.add_argument('--bootstrap',type=Path,default=ROOT/'source/hackios-xnu-userland/jb/root/var/jb')
- a=p.parse_args()
- original=a.system.resolve();assert sha(original)=='d147f97961429ff384a06960bf706b9bbab0d097b933e4b1bb1236c1f84cd432'
- bootstrap=a.bootstrap.resolve();assert (bootstrap/'Applications/Sileo.app/Sileo').is_file()
+ p=argparse.ArgumentParser(description=__doc__);p.add_argument('--output',type=Path,required=True);a=p.parse_args()
+ original=ROOT/'system.apfs';assert sha(original)=='d147f97961429ff384a06960bf706b9bbab0d097b933e4b1bb1236c1f84cd432'
+ bootstrap=ROOT/'source/hackios-xnu-userland/jb/root/var/jb';assert (bootstrap/'Applications/Sileo.app/Sileo').is_file()
  out=a.output.resolve();out.mkdir(parents=True,exist_ok=False);tree=out/'system-root';tree.mkdir()
  v=apfs.pick_volume(apfs.Container(str(original)),None);manifest=[];hashes={};count=0
  for path,_,oid,_ in apfs.walk(v,2):

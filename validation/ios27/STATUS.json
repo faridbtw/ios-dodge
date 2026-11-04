@@ -1,0 +1,40 @@
+{
+  "updated": "2026-11-04",
+  "ios_version": "27.2",
+  "build": "24B119",
+  "ram_only": true,
+  "phone_partition_writes": false,
+  "local_profile": "status-layout-v4",
+  "kernel_sha256": "5f5221979cbdd271607234de772738fea040f2df983b4b595362c101b25d0650",
+  "uefi_sha256": "c0e8d7cf226e2f318dfe5f8470da99753ea6a553b1bedb37e01e1032152a2db4",
+  "verified": [
+    "iOS home/lock screen and touch",
+    "arm64e Vulkan/Metal standalone probes: zero failures",
+    "native EDR startup improves UI responsiveness",
+    "hardware battery percentage and live charging/unplug/reconnect",
+    "wallpaper display",
+    "user-confirmed Dynamic Island alignment",
+    "user-confirmed battery status-bar placement"
+  ],
+  "unresolved": [
+    "status-bar clock absent after native timer restart",
+    "wallpaper selection fails or resprings",
+    "blank widgets",
+    "startup/animation black bands",
+    "60/120 FPS not established",
+    "Wi-Fi disabled in iOS27 profile",
+    "sound/Voice Memos unverified; reported freeze",
+    "shutdown panic after oem stop"
+  ],
+  "not_implemented": [
+    "replacement compatibility clock overlay"
+  ],
+  "excluded": [
+    "Apple runtime images/caches",
+    "firmware/calibration",
+    "SDKs",
+    "raw logs",
+    "credentials",
+    "compiled payloads"
+  ]
+}

@@ -3,7 +3,7 @@
 from pathlib import Path
 import subprocess,tempfile
 ROOT=Path(__file__).resolve().parents[1]
-s=(ROOT/'source/touch-runtime-v15/loader.c').read_text()
+s=(ROOT/'experimental/uefi-turtle/live-reset-v12/loader-src/loader.c').read_text()
 prefix=s[s.index('static void\nfb_command(char *cmd)'):s.index(' if(str_eq(cmd,"oem sm8750-display-te"))')]
 source=r'''
 #include <assert.h>

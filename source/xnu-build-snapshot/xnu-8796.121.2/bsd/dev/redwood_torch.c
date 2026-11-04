@@ -1,10 +1,3 @@
-/* OnePlus13 isolated flashlight adaptation, 2026-10-28.
- * Source: reference redwood_torch.c; v7 transport verified against native
- * Linux spmi-pmic-arb.c and captured phone DT. PM8550 SID1/EE0.
- * Channel0 only, 32mA requested per channel, all four, matching captured Android torch, 5mA resolution.
- * Other-phone historical commentary below is retained as source provenance;
- * the definitions and identity/ownership checks select only this hardware.
- */
 /*
  * The flashlight of the POCO X5 Pro (redwood): the flash LED module of the PM8350C (SPMI slave 2,
  * registers 0xee00; "qcom,pm8350c-flash-led", four channels), the rear flash LED on its channel 0.
@@ -57,7 +50,6 @@
  */
 #include <kern/clock.h>
 #include <kern/thread.h>
-#include <kern/sched_prim.h>
 #include <libkern/libkern.h>
 #include <mach/mach_types.h>
 #include <machine/machine_routines.h>
@@ -134,7 +126,6 @@ static inline void
 wr(vm_offset_t address, uint32_t value)
 {
 	*(volatile uint32_t *)address = value;
- __asm__ volatile("dsb osh":::"memory");
 }
 
 static void
@@ -154,30 +145,28 @@ wait_ms(uint32_t ms)
 	if (leaving) {
 		spin_us(ms * 1000);
 	} else {
-		static int wait_event;uint64_t deadline;
-  clock_interval_to_deadline(ms,NSEC_PER_MSEC,&deadline);
-  assert_wait_deadline((event_t)&wait_event,THREAD_UNINT,deadline);thread_block(THREAD_CONTINUE_NULL);
+		delay_for_interval(ms, NSEC_PER_MSEC);
 	}
 }
 
 /* ---- the PMIC arbiter (version 5) ---------------------------------------------------------------- */
 
-#define ARB_CORE_PHYS           0x0c400000UL    /* the version, and which peripheral each channel is */
-#define ARB_CORE_SIZE           0x3000UL
-#define ARB_CNFG_PHYS           0x0c42d000UL    /* which system may write through each channel */
-#define ARB_CNFG_SIZE           0x4000UL
-#define ARB_OBSERVER_PHYS       0x0c440000UL    /* v7 reads: 0x20 per APID, EE0 */
-#define ARB_OBSERVER_SIZE       0x80000UL
-#define ARB_CHNLS_PHYS          0x0c500000UL    /* v7 writes: 0x1000 per APID */
+#define ARB_CORE_PHYS           0x0c440000UL    /* the version, and which peripheral each channel is */
+#define ARB_CORE_SIZE           0x1100UL
+#define ARB_CNFG_PHYS           0x0c40a000UL    /* which system may write through each channel */
+#define ARB_CNFG_SIZE           0x1000UL
+#define ARB_OBSERVER_PHYS       0x0e600000UL    /* reads: 0x80 per channel for our system (the first) */
+#define ARB_OBSERVER_SIZE       0x10000UL
+#define ARB_CHNLS_PHYS          0x0c600000UL    /* writes: 0x10000 per channel */
 #define ARB_SYSTEM              0               /* who we are to the arbiter: the device tree's "qcom,ee" */
 
 #define ARB_VERSION             0x000
 #define ARB_VERSION_5           0x50000000u
 #define ARB_VERSION_7           0x70000000u
 #define ARB_FEATURES            0x004
-#define ARB_CHANNEL(n)          (0x2000 + 4 * (n))       /* [19:8] slave and peripheral */
-#define ARB_OWNER(n)            (4 * (n))       /* [2:0] the system that may write through channel n */
-#define ARB_MAX_CHANNELS        1024
+#define ARB_CHANNEL(n)          (0x900 + 4 * (n))       /* [19:8] slave and peripheral */
+#define ARB_OWNER(n)            (0x700 + 4 * (n))       /* [2:0] the system that may write through channel n */
+#define ARB_MAX_CHANNELS        512
 
 #define CHANNEL_COMMAND         0x00
 #define CHANNEL_STATUS          0x08
@@ -200,8 +189,8 @@ struct peripheral {
 	bool            found, writable;
 	vm_offset_t     write;          /* its write channel, mapped (only the flash module's) */
 };
-static struct peripheral flash = { .name = "the PM8350C's flash LED module", .id = 0x1ee };
-static struct peripheral alarm = { .name = "the PM8350C's temperature alarm", .id = 0x10a };
+static struct peripheral flash = { .name = "the PM8350C's flash LED module", .id = 0x2ee };
+static struct peripheral alarm = { .name = "the PM8350C's temperature alarm", .id = 0x20a };
 
 static vm_offset_t arb_core, arb_cnfg, arb_observer;
 static uint8_t alarm_subtype;
@@ -260,7 +249,7 @@ spmi_read(const struct peripheral *p, uint8_t reg, uint8_t *bytes, uint32_t coun
 static const char *
 spmi_read_once(const struct peripheral *p, uint8_t reg, uint8_t *bytes, uint32_t count)
 {
-	vm_offset_t channel = arb_observer + 0x8000UL * ARB_SYSTEM + 0x20UL * p->channel;
+	vm_offset_t channel = arb_observer + 0x10000UL * ARB_SYSTEM + 0x80UL * p->channel;
 	const char *problem;
 	uint32_t data[2];
 
@@ -306,13 +295,13 @@ spmi_read_once(const struct peripheral *p, uint8_t reg, uint8_t *bytes, uint32_t
 #define ALARM_SUBTYPE           0x05            /* 0x08: the first generation, 0x09 the second */
 #define ALARM_STATUS            0x08            /* the over-temperature stage: [1:0] (first generation) or [6:4] */
 
-#define ANDROID_TORCH_MA        32             /* led:torch_0 while Android's flashlight is on */
-#define IRES_UA                 5000           /* its resolution ("qcom,ires-ua") */
-#define ANDROID_ITARGET         5               /* round(125000 / 12500) - 1: the most ever written */
+#define ANDROID_TORCH_MA        125             /* led:torch_0 while Android's flashlight is on */
+#define IRES_UA                 12500           /* its resolution ("qcom,ires-ua") */
+#define ANDROID_ITARGET         9               /* round(125000 / 12500) - 1: the most ever written */
 #define HOTTEST_BATTERY_C       45
 
 static const uint8_t writable_regs[] = {
- 0x3e,0x3f,0x40,0x41,0x42,0x43,0x44,0x45,0x46,0x49,0x4a,0x4b,0x4c,0x4d,0x4e
+	FLASH_SAFETY_TIMER0, FLASH_ITARGET0, FLASH_MODULE_EN, FLASH_IRESOLUTION, FLASH_STROBE_CTRL0, FLASH_EN_LED_CTRL,
 };
 
 static void
@@ -338,20 +327,12 @@ put(uint8_t reg, uint8_t value)
 	for (size_t i = 0; i < sizeof(writable_regs); i++) {
 		allowed |= writable_regs[i] == reg;
 	}
-	if ((broken && !((reg == FLASH_MODULE_EN && value == 0) || (reg == FLASH_EN_LED_CTRL && value == 0))) || !allowed || !flash.writable || flash.write == 0 || flash.id != 0x1ee) {
+	if (broken || !allowed || !flash.writable || flash.write == 0 || flash.id != 0x2ee) {
 		give_up(allowed ? "a write that may not be made" : "a register that is not to be written");
 		return false;
 	}
- if((reg>=0x42&&reg<=0x45&&(value&0x7f)>ANDROID_ITARGET)||
-    (reg>=0x3e&&reg<=0x41&&value!=0)||
-    (reg>=0x4a&&reg<=0x4d&&(value&0x7f)!=1)||
-    (reg==0x49&&(value&15)!=15)||
-    (reg==0x4e&&(value&15)!=0&&(value&15)!=15)||
-    (reg==0x46&&value!=0&&value!=0x80)){
-  give_up("value outside native torch-only limits");return false;
- }
 	/* (the channel is still the module's: its entry in the arbiter's table is looked at again) */
-	if (((rd(arb_core + ARB_CHANNEL(flash.channel)) >> 8) & 0xfff) != flash.id || (rd(arb_cnfg + ARB_OWNER(flash.channel)) & 7) != ARB_SYSTEM) {
+	if (((rd(arb_core + ARB_CHANNEL(flash.channel)) >> 8) & 0xfff) != flash.id) {
 		give_up("the arbiter's channel is no longer the flash module's");
 		return false;
 	}
@@ -429,8 +410,23 @@ find_channel(struct peripheral *p, uint32_t channels)
 static void
 show_registers(void)
 {
- const uint8_t regs[]={0,4,5,6,7,0x10,0x3e,0x42,0x46,0x49,0x4a,0x4e};
- for(unsigned i=0;i<sizeof(regs);i++){uint8_t v;if(get(&flash,regs[i],&v))say("op13-torch: register %x=%x\n",regs[i],v);}
+	uint8_t r[8];
+	char line[200];
+
+	for (unsigned base = 0; base < 0x100; base += 0x20) {
+		int n = snprintf(line, sizeof(line), "torch: %#04x:", base);
+
+		for (unsigned i = 0; i < 0x20; i += 8) {
+			if (spmi_read(&flash, (uint8_t)(base + i), r, 8) != NULL) {
+				n += snprintf(line + n, sizeof(line) - (size_t)n, " (unreadable)");
+				continue;
+			}
+			for (unsigned j = 0; j < 8; j++) {
+				n += snprintf(line + n, sizeof(line) - (size_t)n, " %02x", r[j]);
+			}
+		}
+		say("%s\n", line);
+	}
 }
 
 /* What would make the light go off now, or NULL. */
@@ -468,35 +464,50 @@ static bool configured, lit;
 static bool
 configure(void)
 {
- if(configured)return true;
- for(unsigned ch=0;ch<4;ch++)
-  if(!put_bits(FLASH_STROBE_CTRL0+ch,0x7f,1)||!put(FLASH_SAFETY_TIMER0+ch,0))return false;
- configured=true;return true;
+	if (!configured && put_bits(FLASH_STROBE_CTRL0, 0x74, 0x00) && put_bits(FLASH_SAFETY_TIMER0, 0x80, 0x00)) {
+		configured = true;
+	}
+	return configured;
 }
-static bool
-dark(void)
-{
- /* Attempt both independent disable paths even if either fails. */
- bool channels=put(FLASH_EN_LED_CTRL,0),module=put(FLASH_MODULE_EN,0);
- lit=!(channels||module);
- return channels&&module;
-}
+
+/* The light at `permille' of Android's current: its writes in its order. */
 static bool
 light(uint32_t permille)
 {
- const char *why=trouble();
- if(why){note("not lit: %s",why);(void)dark();give_up("hardware fault");return false;}
- uint32_t ua=ANDROID_TORCH_MA*permille;
- if(ua<IRES_UA)ua=IRES_UA;
- uint32_t code=(ua+IRES_UA/2)/IRES_UA-1;
- if(code>ANDROID_ITARGET)code=ANDROID_ITARGET;
- if(!configure())goto fail;
- for(unsigned ch=0;ch<4;ch++)if(!put_bits(FLASH_ITARGET0+ch,0x7f,code))goto fail;
- if(!put_bits(FLASH_IRESOLUTION,15,15))goto fail;
- if(!lit&&(!put(FLASH_MODULE_EN,0x80)||!put_bits(FLASH_EN_LED_CTRL,15,15)))goto fail;
- lit=true;return true;
-fail:
- (void)dark();give_up("torch configuration failed");return false;
+	uint32_t ua = ANDROID_TORCH_MA * 1000 * permille / 1000, code;
+	const char *why;
+
+	if (ua < IRES_UA) {
+		ua = IRES_UA;           /* (the driver's least: one step) */
+	}
+	code = (ua + IRES_UA / 2) / IRES_UA - 1;
+	if (code > ANDROID_ITARGET) {
+		code = ANDROID_ITARGET;
+	}
+	if (!lit && (why = trouble()) != NULL) {
+		note("not lit: %s", why);
+		give_up("trouble before the light");
+		return false;
+	}
+	if (!configure() || !put_bits(FLASH_IRESOLUTION, 0x01, 0x00) || !put_bits(FLASH_ITARGET0, 0x7f, (uint8_t)code)) {
+		return false;
+	}
+	if (!lit && (!put(FLASH_MODULE_EN, 0x80) || !put_bits(FLASH_EN_LED_CTRL, 0x01, 0x01))) {
+		return false;
+	}
+	lit = true;
+	return true;
+}
+
+/* Off, in Android's order: the channel, the module, the target current, the timer's bit. */
+static bool
+dark(void)
+{
+	bool ok = put_bits(FLASH_EN_LED_CTRL, 0x01, 0x00) && put(FLASH_MODULE_EN, 0x00) && put_bits(FLASH_ITARGET0, 0x7f, 0x00) &&
+	    put_bits(FLASH_SAFETY_TIMER0, 0x80, 0x00);
+
+	lit = !ok && lit;
+	return ok;
 }
 
 /* ---- torch=3: the light for iOS --------------------------------------------------------------------- */
@@ -633,21 +644,19 @@ torch_thread(__unused void *parameter, __unused wait_result_t result)
 	uint32_t version, channels;
 	uint8_t id[2] = { 0, 0 }, revision = 0, alarm_status = 0;
 
-say("op13-torch: four-channel control v1 mask0f cap32mA sleeping-worker\n");
 	say("torch: level %u: %s\n", level, level == 1 ? "a look, reading only" : level == 2 ? "the light on once" :
 	    "the light for iOS");
 	arb_core = ml_io_map(ARB_CORE_PHYS, ARB_CORE_SIZE);
 	arb_cnfg = ml_io_map(ARB_CNFG_PHYS, ARB_CNFG_SIZE);
 	arb_observer = ml_io_map(ARB_OBSERVER_PHYS, ARB_OBSERVER_SIZE);
-	if(!arb_core||!arb_cnfg||!arb_observer)goto out;
- version = rd(arb_core + ARB_VERSION);
+	version = rd(arb_core + ARB_VERSION);
 	channels = rd(arb_core + ARB_FEATURES) & 0x7ff;
-	if (version < ARB_VERSION_7 || version >= 0x80000000u) {
-		say("torch: PMIC arbiter version %#x, not 7: nothing done\n", version);
+	if (version < ARB_VERSION_5 || version >= ARB_VERSION_7) {
+		say("torch: PMIC arbiter version %#x, not 5: nothing done\n", version);
 		goto out;
 	}
 	if (channels == 0 || channels > ARB_MAX_CHANNELS) {
-		say("op13-torch: invalid APID count %u\n",channels);goto out;
+		channels = ARB_MAX_CHANNELS;
 	}
 	find_channel(&flash, channels);
 	find_channel(&alarm, channels);
@@ -673,10 +682,7 @@ say("op13-torch: four-channel control v1 mask0f cap32mA sleeping-worker\n");
 		say("torch: the channel is not ours to write through: nothing written\n");
 		goto out;
 	}
-	flash.write = ml_io_map(ARB_CHNLS_PHYS + 0x1000UL * flash.channel, 0x1000);
- if(!flash.write||!alarm.found)goto out;
- uint8_t initial_module=0,initial_channels=0;
- if(!get(&flash,FLASH_MODULE_EN,&initial_module)||!get(&flash,FLASH_EN_LED_CTRL,&initial_channels)||(initial_module&0x80)||(initial_channels&0xf)){give_up("unexpected initial illumination");goto out;}
+	flash.write = ml_io_map(ARB_CHNLS_PHYS + 0x10000UL * flash.channel, 0x1000);
 	PE_parse_boot_argn("torch_max_s", &max_secs, sizeof(max_secs));
 	max_secs = max_secs < 1 ? 1 : max_secs > 120 ? 120 : max_secs;
 	if (level == 2) {
@@ -686,7 +692,7 @@ say("op13-torch: four-channel control v1 mask0f cap32mA sleeping-worker\n");
 
 		PE_parse_boot_argn("torch_secs", &secs, sizeof(secs));
 		secs = secs < 1 ? 1 : secs > max_secs ? max_secs : secs;
-		say("torch: the light ON at Android's %u mA (ITARGET %u, 5 mA steps) for %u s\n", ANDROID_TORCH_MA, ANDROID_ITARGET,
+		say("torch: the light ON at Android's %u mA (ITARGET %u, 12.5 mA steps) for %u s\n", ANDROID_TORCH_MA, ANDROID_ITARGET,
 		    secs);
 		if (light(1000)) {
 			uint8_t rt = 0, s1 = 0, s2 = 0;
@@ -713,10 +719,6 @@ say("op13-torch: four-channel control v1 mask0f cap32mA sleeping-worker\n");
 		serve();
 	}
 out:
- if(level>=2&&flash.write&&(lit||broken)){
-  (void)put(FLASH_EN_LED_CTRL,0);
-  (void)put(FLASH_MODULE_EN,0);
- }
 	say("torch: done\n");
 	thread_terminate(current_thread());
 }
@@ -726,8 +728,7 @@ redwood_torch_init(void)
 {
 	thread_t thread;
 
-	PE_parse_boot_argn("torch", &level, sizeof(level));
- if (level == 0) {
+	if (!PE_parse_boot_argn("torch", &level, sizeof(level)) || level == 0) {
 		return;
 	}
 	level = level > 3 ? 3 : level;

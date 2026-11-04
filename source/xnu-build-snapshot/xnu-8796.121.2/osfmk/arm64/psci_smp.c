@@ -60,7 +60,6 @@
 
 extern void loader_return(void);
 extern void loader_log_putc(char c);
-extern void loader_log_line(const char *line);
 extern unsigned long gVirtBase, gPhysBase;
 
 /* The firmware is called with HVC, not SMC. (start.s reads this too, at its physical address.) */
@@ -165,10 +164,6 @@ psci_smp_start_cpu(int cpu)
 	uint64_t entry = ml_static_vtop((vm_offset_t)&LowResetVectorBase);
 	uint64_t now, deadline;
 	int64_t status;
-	char line[512];
-
-	snprintf(line, sizeof(line), "psci-start: cpu=%d phys=%#x from=%d preparing CPU_ON\n", cpu, phys_id, cpu_number());
-	loader_log_line(line);
 
 	/*
 	 * What that core reads with its MMU off: the code and the page tables of start.s, and what
@@ -192,8 +187,6 @@ psci_smp_start_cpu(int cpu)
 
 	os_atomic_store(&psci_smp_cpu_stage[cpu], PSCI_SMP_CPU_ASKED, release);
 	status = psci_call(PSCI_CPU_ON, phys_id, entry, 0);
-	snprintf(line, sizeof(line), "psci-start: cpu=%d CPU_ON=%lld (%s)\n", cpu, status, psci_error(status));
-	loader_log_line(line);
 	if (status != 0) {
 		os_atomic_store(&psci_smp_cpu_stage[cpu], 0, release);
 		printf("psci: cpu %d (MPIDR 0x%x) was not started: the firmware answers %lld (%s)\n",
@@ -206,8 +199,6 @@ psci_smp_start_cpu(int cpu)
 	do {
 		stage = os_atomic_load(&psci_smp_cpu_stage[cpu], acquire);
 		if (stage >= PSCI_SMP_CPU_RUNNING) {
-			snprintf(line, sizeof(line), "psci-start: cpu=%d joined scheduler stage=%u\n", cpu, stage);
-			loader_log_line(line);
 			return KERN_SUCCESS;
 		}
 		/* memory, not this processor's copy of it */
@@ -223,17 +214,11 @@ psci_smp_start_cpu(int cpu)
 		struct psci_smp_start_fault *f = &psci_smp_start_fault;
 		uint64_t to_virtual = gVirtBase - gPhysBase;
 
-		snprintf(line, sizeof(line), "psci-start: cpu=%d early exception ESR=%#llx ELR=%#llx FAR=%#llx LR=%#llx SP=%#llx\n",
-		    cpu, f->esr, f->elr + to_virtual, f->far, f->lr + to_virtual, f->sp);
-		loader_log_line(line);
 		printf("psci: cpu %d (MPIDR 0x%llx) took an exception on its way in and has switched itself off: "
 		    "ESR 0x%llx ELR 0x%llx FAR 0x%llx LR 0x%llx SP 0x%llx (ELR and LR as kernel addresses: 0x%llx 0x%llx)\n",
 		    cpu, f->mpidr, f->esr, f->elr, f->far, f->lr, f->sp, f->elr + to_virtual, f->lr + to_virtual);
 		os_atomic_andnot(&psci_smp_started, 1u << cpu, relaxed);        /* nothing of it is left to stop */
 	} else {
-		snprintf(line, sizeof(line), "psci-start: cpu=%d did not join after %d seconds stage=%u\n",
-		    cpu, PSCI_SMP_START_SECONDS, stage);
-		loader_log_line(line);
 		printf("psci: cpu %d (MPIDR 0x%x) was started %d seconds ago and has not joined: %s\n",
 		    cpu, phys_id, PSCI_SMP_START_SECONDS,
 		    stage >= PSCI_SMP_CPU_IN_KERNEL ? "it got as far as arm_init_cpu()" : "no sign of it since the firmware took the request");

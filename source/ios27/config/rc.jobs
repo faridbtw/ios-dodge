@@ -1,0 +1,6 @@
+/redwood/bin/battery-probe &
+/redwood/bin/memory-watch &
+/redwood/bin/load-ram-job /redwood/LaunchDaemons/com.apple.systemstatusd.plist
+/redwood/bin/load-ram-job /redwood/LaunchDaemons/com.apple.InputUI.plist
+/redwood/bin/register-system-app
+/redwood/bin/load-ram-job /redwood/LaunchDaemons/com.apple.PosterBoard.plist

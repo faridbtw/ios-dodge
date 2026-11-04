@@ -24,4 +24,4 @@ selection is deliberately still guarded because its hosted scene renders black.
 Do not describe this as a complete fix for that separate lock-screen picker.
 
 Raw captures, Apple assets/firmware, system.apfs and boot roots stay private.
-Sanitized test results: validation/wallpaper/STATUS.json and QUICKSTART.txt.
+Current checkpoint and further test results: WALLPAPER-RESUME.txt.

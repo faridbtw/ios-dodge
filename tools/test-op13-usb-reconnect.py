@@ -5,7 +5,7 @@ import subprocess
 import tempfile
 
 ROOT = Path(__file__).resolve().parents[1]
-SOURCE = ROOT / 'source/touch-runtime-v15'
+SOURCE = ROOT / 'experimental/uefi-turtle/usb-reconnect-v8/loader-src'
 loader = (SOURCE / 'loader.c').read_text()
 transport = loader[loader.index('/* All synchronous and asynchronous receive paths share'):loader.index('\nstatic void\nfb_reply(')]
 prefix = r'''

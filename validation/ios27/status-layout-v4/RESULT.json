@@ -1,0 +1,6 @@
+{
+  "status": "island-and-battery-position-user-confirmed",
+  "clock": "still absent after native timer restart",
+  "replacement_clock_implemented": false,
+  "ram_only": true
+}

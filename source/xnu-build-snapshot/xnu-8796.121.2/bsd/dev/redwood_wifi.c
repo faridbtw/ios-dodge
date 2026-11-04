@@ -4007,8 +4007,6 @@ redwood_wifi_driver_file(const char *name, uint64_t *size)
 bool
 redwood_wifi_radio_address(uint8_t *address)
 {
- extern int op13_peach_radio_address(uint8_t *);
- if(op13_peach_radio_address(address))return true;
 	char text[32] = "";
 	uint8_t bytes[6];
 	unsigned count = 0, digits = 0, value = 0;
@@ -4213,9 +4211,6 @@ join_given(uint64_t began)
 	kfree_data(state, sizeof(*state));
 }
 
-/* The adopted PCIe path shares the same standing-network/station boundary. */
-void op13_peach_join_given(void){join_given(now_us());}
-
 /*
  * wifi=1: the whole of it on a thread of its own, so that the system starts meanwhile (the
  * firmware's calibration alone takes seven seconds). The steps that only look are left out.
@@ -4267,8 +4262,6 @@ whole_thread(__unused void *parameter, __unused wait_result_t result)
 void
 redwood_wifi_init(void)
 {
- extern int op13_peach_transport_init(void);
- if(op13_peach_transport_init())return;
 	uint32_t on = 0, back = 0, done = 0;
 	uint64_t size = 0;
 	thread_t thread;

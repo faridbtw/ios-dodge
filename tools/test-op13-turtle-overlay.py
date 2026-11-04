@@ -5,7 +5,7 @@ import subprocess
 import tempfile
 
 ROOT = Path(__file__).resolve().parents[1]
-SOURCE = ROOT / 'source/touch-runtime-v15'
+SOURCE = ROOT / 'experimental/uefi-turtle/stable-overlay-v11/loader-src'
 loader = (SOURCE / 'loader.c').read_text()
 integration = loader[loader.index('#include "op13_big_console.h"'):loader.index('/* Draw once while UEFI owns the display;')]
 prefix = r'''

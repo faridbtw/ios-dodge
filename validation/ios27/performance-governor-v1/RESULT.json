@@ -1,0 +1,27 @@
+{
+  "cpu_governor_running": true,
+  "seven_ios_cores_recorded_activity": true,
+  "measured_cpu_mhz": [
+    2394,
+    2391,
+    2389,
+    2392,
+    2394
+  ],
+  "prime_scmi_khz": 2246400,
+  "cpu_max_khz": 2400000,
+  "gpu_governor_max_mhz": 342,
+  "temperature_samples_c_min": 46.3,
+  "temperature_samples_c_max": 54.4,
+  "subjective_smoothness_verified": false,
+  "kernel_sha256": "21f9a80bcf9ac1d247888dadb39ac698fbed452b1e96ba4126e267318197a429",
+  "log_sha256": "51d172270fa536a1ec3b13675f200f56902f12a2dbb2ac53a14275099acce797",
+  "current_boot": "phone-20261101-220533",
+  "current_boot_user_confirmed_ui_and_touch": true,
+  "current_boot_live_logs_accessible": true,
+  "current_boot_live_log": "phone-20261101-220533/live-scroll.log",
+  "current_boot_user_scrolling_comparison": "pending",
+  "user_report": "Scrolling approximately 1 FPS; no artifacts",
+  "selected_for_regular_boot": false,
+  "rejected_for_regular_boot": true
+}

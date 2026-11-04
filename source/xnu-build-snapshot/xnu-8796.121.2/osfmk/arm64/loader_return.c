@@ -359,45 +359,9 @@ loader_log_append_msgbuf(void)
 	}
 }
 
-extern bool redwood_adreno_return_safe(void);
-
-/* Capture the initiating CPU before SMP hands the return to the boot CPU.
- * GPU quiesce can deliberately park forever, so panic text must precede it. */
-static int loader_return_origin_cpu = -1;
-
-static void
-loader_return_capture_origin(uintptr_t caller)
-{
-	const int cpu = cpu_number();
-	char line[192];
-	const uintptr_t base = (uintptr_t)debug_buf_base, end = (uintptr_t)debug_buf_ptr;
-	size_t bytes = end > base && base != 0 ? end - base : 0;
-
-	if (!os_atomic_cmpxchg(&loader_return_origin_cpu, -1, cpu, acq_rel)) {
-		return;
-	}
-	if (bytes > debug_buf_size) {
-		bytes = debug_buf_size;
-	}
-	if (bytes > 64 * 1024) {
-		bytes = 64 * 1024;
-	}
-	snprintf(line, sizeof(line), "\nloader-return: origin cpu=%d caller=%#llx panic-bytes=%lu before SMP/quiesce\n",
-	    cpu, (unsigned long long)caller, (unsigned long)bytes);
-	loader_log_line(line);
-	if (bytes != 0) {
-		loader_log_puts("\n--- panic buffer before quiesce ---\n");
-		for (size_t i = 0; i < bytes; i++) {
-			loader_log_putc(debug_buf_base[i]);
-		}
-		loader_log_puts("\n--- end of early panic buffer ---\n");
-	}
-}
-
 void
 loader_return(void)
 {
-	loader_return_capture_origin((uintptr_t)__builtin_extract_return_addr(__builtin_return_address(0)));
 #if defined(GENERIC_PSCI_SMP)
 	/*
 	 * With more than one processor: the others switch themselves off first, and the rest of
@@ -406,26 +370,31 @@ loader_return(void)
 	 */
 	psci_smp_stop_others();
 #endif
-	/* Other CPUs are now stopped. Preserve printf/IOLog diagnostics even when
-	 * the GPU ownership guard below cannot let this kernel return. */
-	loader_log_linearize();
-	if (!loader_return_entered) {
-		loader_log_append_msgbuf();
-	}
 	redwood_ufs_quiesce();          /* this kernel's requests to the storage done, UEFI's list as it was, for the log */
 	redwood_adreno_quiesce();       /* the GPU block, if it was started, has tables in memory that is about to be reused */
 	redwood_wifi_quiesce();         /* the Wi-Fi DSP, if it still runs (a panic), is not left to itself */
-	redwood_adsp_quiesce();
-	op13_batt_adsp_quiesce();         /* nor the audio DSP */
+	redwood_adsp_quiesce();         /* nor the audio DSP */
+	op13_batt_adsp_quiesce();
 	redwood_ddr_quiesce();          /* and the vote for the memory's bandwidth taken away */
 	redwood_haptic_quiesce();       /* the vibration motor's chip back into reset, if it was let out */
 	redwood_torch_quiesce();        /* the flashlight off, if it was lit */
 	redwood_camera_quiesce();       /* the camera powered down, if it was powered up */
 	redwood_mic_quiesce();          /* (what the microphones' path did, said again: it happens in the log's middle) */
-	/* Keep logs available; never let the loader reuse live GPU backing. */
-	if (!redwood_adreno_return_safe()) {
-		loader_log_puts("\nmacan-gpu: return blocked: DMA stop unproved; cold reset required\n");
-		for (;;) { __asm__ volatile("wfe"); }
+	/*
+	 * A panic's text is first collected in the panic buffer and only later
+	 * flushed to the console; if the console itself is what failed, that
+	 * never happens. Append the buffer so the loader gets it either way.
+	 */
+	loader_log_linearize();
+	if (!loader_return_entered) {
+		loader_log_append_msgbuf();
+	}
+	if (!loader_return_entered && debug_buf_base != NULL && debug_buf_ptr > debug_buf_base &&
+	    (size_t)(debug_buf_ptr - debug_buf_base) < 256 * 1024) {
+		loader_log_puts("\n--- panic buffer ---\n");
+		for (const char *c = debug_buf_base; c < debug_buf_ptr; c++) {
+			loader_log_putc(*c);
+		}
 	}
 	loader_jump(0, 0);
 }
@@ -472,8 +441,8 @@ loader_return_timer(__unused thread_call_param_t p0, __unused thread_call_param_
 		redwood_var_save_on_return();   /* the data volume kept, while the system is still whole */
 		redwood_adreno_stop();          /* a GPU kept for the system is given back while there is a thread to wait in */
 		redwood_wifi_stop();            /* and the Wi-Fi DSP, if it runs, shut down */
-		redwood_adsp_stop();
-		op13_batt_adsp_stop();            /* and the audio DSP */
+		redwood_adsp_stop();            /* and the audio DSP */
+		op13_batt_adsp_stop();
 	}
 	if (PE_parse_boot_argn("return_cpu", &cpu, sizeof(cpu)) && cpu <= (uint32_t)ml_get_max_cpu_number() &&
 	    cpu_xcall((int)cpu, loader_return_test, (void *)(uintptr_t)(as_panic ? 2 : 1)) == KERN_SUCCESS) {

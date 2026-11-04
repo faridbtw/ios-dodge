@@ -182,10 +182,6 @@ str_eq(const char *a, const char *b)
  * the screen is left to the kernel (and to "oem screenshot").
  */
 static int screen_quiet;
-static int screen_log_char(char c);
-static void screen_log_flush(int force);
-static int op13_wifi_publish_transfer(void);
-static unsigned op13_wifi_transfer_ready;
 
 static void
 put_char(char c)
@@ -195,7 +191,6 @@ put_char(char c)
 	if (log_len < sizeof(log_buf) - 1) {
 		log_buf[log_len++] = c;
 	}
-    if (!screen_quiet && screen_log_char(c)) return;
 	if (ST->con_out != NULL && !screen_quiet) {
 		if (c == '\n') {
 			w[0] = '\r', w[1] = '\n';
@@ -930,11 +925,7 @@ __asm__ (
 
 static uint64_t smc_call(uint64_t id, uint64_t a1, uint64_t a2, uint64_t *r1, uint64_t *r2);
 static uint64_t smc_x3;
-#if defined(XNULOADER_PLATFORM_DODGE)
-static const struct platform *const PLAT=&platform_dodge;
-#else
 static const struct platform *PLAT;
-#endif
 static void clean_dcache(uint64_t start, uint64_t end);
 static void flush_dcache(uint64_t start, uint64_t end);
 
@@ -2470,7 +2461,7 @@ run_on_other_cpu(uint64_t mpidr, uint64_t entry, uint64_t boot_args_pa, const st
 #define VIRT_WDT_SET_TIME  0x86000008u
 #define WDT_BITE_MS        30000u
 
-
+static const struct platform *PLAT;
 static int wdt_armed;
 
 static uint64_t smc_x3;             /* the fourth argument register, for the one call that has one */
@@ -2694,153 +2685,6 @@ static struct {
 	uint64_t base;
 	uint32_t width, height, stride;
 } SCREEN;
-static uint64_t console_columns, console_rows;
-
-/* Use the widest/largest advertised text mode, rather than centered VGA 80x25. */
-static void expand_console(void)
-{
-    efi_text_output *con = ST->con_out;
-    if (!con || !con->mode || !con->query_mode || !con->set_mode ||
-        con->mode->max_mode < 1 || con->mode->max_mode > 64) return;
-    int saved_quiet = screen_quiet;
-    screen_quiet = 1;
-    uint64_t best = 0, columns = 0, rows = 0;
-    for (int32_t mode = 0; mode < con->mode->max_mode; mode++) {
-        uint64_t c = 0, r = 0;
-        efi_status status = con->query_mode(con, (uint64_t)mode, &c, &r);
-        print("console mode %d: %d x %d status %x\n", (uint64_t)mode, c, r, status);
-        if (EFI_ERROR(status) || !c || !r || c > 1024 || r > 1024) continue;
-        if (c * r > columns * rows || (c * r == columns * rows && c > columns)) {
-            best = (uint64_t)mode; columns = c; rows = r;
-        }
-    }
-    if (columns && rows) {
-        efi_status status = con->set_mode(con, best);
-        print("console selected mode %d: %d x %d status %x\n", best, columns, rows, status);
-        if (!EFI_ERROR(status)) {
-            console_columns = columns; console_rows = rows;
-            if (con->set_attribute) con->set_attribute(con, 7);
-            if (con->enable_cursor) con->enable_cursor(con, 0);
-            if (GOP && GOP->mode && GOP->mode->info) {
-                SCREEN.base = GOP->mode->fb_base;
-                SCREEN.width = GOP->mode->info->width;
-                SCREEN.height = GOP->mode->info->height;
-                SCREEN.stride = GOP->mode->info->pixels_per_scanline * 4;
-            }
-        }
-    }
-    screen_quiet = saved_quiet;
-}
-
-#include "op13_big_console.h"
-#include "turtle_pixels.h"
-#include "op13_boot_menu.h"
-#include "op13_menu_theme.h"
-#define OP13_UEFI_NAME "Project Boot"
-static struct op13_menu boot_menu;
-static unsigned menu_ios_prepared, menu_upload_active, menu_upload_toggles;
-static void boot_menu_toggle_logs(void);
-static void boot_menu_poll(void);
-static void boot_menu_dispatch(void);
-static int boot_menu_stop(void);
-static void boot_menu_start(void);
-static struct op13_big_console big_console;
-static int big_console_ready;
-
-/* Render/scroll in owned cached RAM. Composite the turtle during display
- * copies, so it is never removed from the physical framebuffer. */
-static uint64_t console_shadow;
-static uint32_t console_dirty_top, console_dirty_bottom;
-static uint64_t console_last_flush;
-
-static struct op13_canvas menu_canvas;
-static unsigned menu_ui_dirty;
-static void boot_menu_draw(void)
-{
-    if(!boot_menu.screen_width||!big_console_ready||!menu_canvas.pixels)return;
-    op13_ui_draw(&menu_canvas,&boot_menu,turtle_pixels);
-    menu_ui_dirty=1;
-    console_dirty_top=0;console_dirty_bottom=SCREEN.height;
-}
-
-static void screen_log_flush(int force)
-{
-    if (!big_console_ready || screen_quiet || console_dirty_top >= console_dirty_bottom) return;
-    uint64_t now = READ_SYSREG(CNTVCT_EL0);
-    if (!force && now - console_last_flush < READ_SYSREG(CNTFRQ_EL0) / 10) return;
-    uint32_t top = console_dirty_top, bottom = console_dirty_bottom;
-    if(boot_menu.screen_width&&!boot_menu.show_logs&&!menu_ui_dirty){
-        console_dirty_top=SCREEN.height;console_dirty_bottom=0;return;
-    }
-    const uint32_t *shadow = (const uint32_t *)(uintptr_t)console_shadow;
-    for (uint32_t y = top; y < bottom; y++) {
-        volatile uint32_t *row = (volatile uint32_t *)(uintptr_t)
-            (SCREEN.base + (uint64_t)y * SCREEN.stride);
-        const uint32_t *source = shadow + (size_t)y * (SCREEN.stride / 4);
-        for (uint32_t x = 0; x < SCREEN.width; x++) {
-            uint32_t pixel = source[x];
-            pixel=op13_ui_compose(&menu_canvas,&boot_menu,turtle_pixels,x,y,pixel);
-            row[x] = pixel;
-        }
-    }
-    clean_dcache(SCREEN.base + (uint64_t)top * SCREEN.stride,
-        SCREEN.base + (uint64_t)bottom * SCREEN.stride);
-    console_dirty_top = SCREEN.height;
-    console_dirty_bottom = 0;
-    console_last_flush = now;
-    menu_ui_dirty=0;
-}
-
-static int screen_log_char(char ch)
-{
-    if (!big_console_ready) return 0;
-    uint32_t before_row = big_console.row;
-    int scroll = before_row + 1 == big_console.rows &&
-        (ch == '\n' || ch == '\t' || big_console.column >= big_console.columns);
-    op13_console_char(&big_console, (unsigned char)ch);
-    uint32_t top = scroll ? big_console.top : big_console.top + before_row * OP13_CELL_HEIGHT;
-    uint32_t bottom = scroll ? big_console.top + big_console.rows * OP13_CELL_HEIGHT :
-        big_console.top + (big_console.row + 1) * OP13_CELL_HEIGHT;
-    if (top < console_dirty_top) console_dirty_top = top;
-    if (bottom > console_dirty_bottom) console_dirty_bottom = bottom;
-    if (ch == '\n') screen_log_flush(0);
-    return 1;
-}
-
-/* Draw once while UEFI owns the display; never repaint over a running kernel. */
-static void turtle_splash(void)
-{
-    if (!GOP || !GOP->mode || !GOP->mode->info || !SCREEN.base ||
-        !SCREEN.width || !SCREEN.height || SCREEN.width > 8192 || SCREEN.height > 8192 ||
-        SCREEN.stride < SCREEN.width * 4 || SCREEN.stride % 4 ||
-        (uint64_t)SCREEN.stride * SCREEN.height > GOP->mode->fb_size ||
-        GOP->mode->info->pixel_format > 1) return;
-    uint32_t side = 300; /* Native asset size: no enlargement. */
-    if (side > SCREEN.height / 2) side = SCREEN.height / 2;
-    if (!side) return;
-    uint32_t top = (SCREEN.height - side) / 2;
-    if (top + side > SCREEN.height) return;
-    uint64_t bytes = (uint64_t)SCREEN.stride * SCREEN.height;
-    if (!console_shadow && EFI_ERROR(BS->allocate_pages(AllocateAnyPages, EfiLoaderData,
-        (bytes * 2 + 4095) >> 12, &console_shadow))) return;
-    memset((void *)(uintptr_t)console_shadow, 0, (size_t)(bytes*2));
-    menu_canvas=(struct op13_canvas){(uint32_t *)(uintptr_t)(console_shadow+bytes),
-        SCREEN.width,SCREEN.height,SCREEN.stride/4,GOP->mode->info->pixel_format==0};
-    int menu_ok=op13_menu_init(&boot_menu,SCREEN.width,SCREEN.height);
-    uint32_t log_left=menu_ok?boot_menu.left+16:0;
-    uint32_t log_width=menu_ok?boot_menu.width-32:SCREEN.width;
-    uint32_t log_top=menu_ok?op13_ui_log_top(&boot_menu)+16:64;
-    uint32_t log_bottom=menu_ok?op13_ui_log_bottom(&boot_menu)-16:SCREEN.height-368;
-    big_console_ready = op13_console_init(&big_console, (void *)(uintptr_t)(console_shadow+4*log_left),
-        bytes-4*log_left, log_width, SCREEN.height, SCREEN.stride, log_top, log_bottom);
-    boot_menu_draw();
-    console_dirty_top = 0;
-    console_dirty_bottom = SCREEN.height;
-    screen_log_flush(1);
-    print("console: larger 16x32 pixel font, %d columns\n", (uint64_t)big_console.columns);
-    print("turtle splash: native %d pixels at screen center\n", (uint64_t)side);
-}
-
 static uint64_t win_base, win_size; /* XNU's physical memory window, claimed once */
 static uint64_t resident_rd_size;   /* root image kept at win_base + RESIDENT_RD_OFFSET, 0 if none */
 static char last_result[64] = "idle";
@@ -3595,10 +3439,6 @@ run_kernel(int have_checkpoint, uint64_t checkpoint)
 			/* Do not enter the kernel at all: exercise only the return path. */
 			jump_to_kernel((uint64_t)(uintptr_t)&loader_return_stub, 0);
 		}
-        if(op13_wifi_publish_transfer()){
-            print("op13-wifi-handoff: publish refused; no kernel launch\n");return 0;
-        }
-        screen_quiet = 1; /* The kernel owns the framebuffer after handoff. */
 		if (kernel_mpidr != this_mpidr) {
             touch_runtime_outstanding=touch_runtime_pending;
 			int64_t status = run_on_other_cpu(kernel_mpidr, entry_va + slide, ba_pa, kernel_live, slide, kernel_budget);
@@ -3633,7 +3473,6 @@ run_kernel(int have_checkpoint, uint64_t checkpoint)
 	}
 
 	/* --- the kernel came back ------------------------------------------- */
-    screen_quiet = 0;
     /* Same-core execution cannot race loader commands; reaching this code is
      * a confirmed return. Other-core successful cleanup is idempotent here. */
     touch_runtime_outstanding=0;
@@ -3730,15 +3569,9 @@ static uint64_t usb_last_activity;
 #define USB_CHUNK    (1024 * 1024)
 
 static usb_device_protocol *USB;
-static unsigned op13_wifi_wmi_mailbox_size;
-static uint8_t op13_wifi_wmi_mailbox[3512];
-static int download_to_wmi;
 static int download_to_ramdisk;     /* set by "oem ramdisk" for the one download that follows */
 static uint8_t *usb_rx_buf, *usb_tx_buf;
 static int usb_connected;
-static int usb_rx_queued, usb_out_pending, usb_in_pending;
-static uint64_t usb_disconnects, usb_connects;
-static char usb_session[17];
 
 static const uint8_t usb_dev_desc[18] = { 18, 1, 0x10, 0x02, 0, 0, 0, 64, 0xd1, 0x18, 0x0d, 0xd0, 0x00, 0x01, 1, 2, 3, 1 };
 static const uint8_t usb_ss_dev_desc[18] = { 18, 1, 0x00, 0x03, 0, 0, 0, 9, 0xd1, 0x18, 0x0d, 0xd0, 0x00, 0x01, 1, 2, 3, 1 };
@@ -3811,162 +3644,82 @@ usb_start(void)
 		return 0;
 	}
 	usb_last_activity = READ_SYSREG(CNTVCT_EL0);
-    for (unsigned i = 0; i < 16; i++) {
-        usb_session[i] = "0123456789abcdef"[(usb_last_activity >> (60 - i * 4)) & 15];
-    }
 	print("usb: started, idle return after %d seconds\n", (uint64_t)USB_IDLE_SECONDS);
 	return 1;
 }
 
-/* All synchronous and asynchronous receive paths share link/transfer ownership. */
-static void
-usb_abort_pending(uint8_t endpoint)
-{
-    int *pending = endpoint == USB_EP_OUT ? &usb_out_pending : &usb_in_pending;
-    if (*pending && USB->abort_xfer) USB->abort_xfer(endpoint);
-    *pending = 0;
-    if (endpoint == USB_EP_OUT) usb_rx_queued = 0;
-}
-
-static void
-usb_link_event(uint32_t state)
-{
-    /* A reconfiguration also invalidates any receive queued for the old link. */
-    usb_abort_pending(USB_EP_OUT);
-    usb_abort_pending(USB_EP_IN);
-    download_to_ramdisk = 0;download_to_wmi=0;
-    usb_connected = state == UsbDeviceStateConnected;
-    usb_last_activity = READ_SYSREG(CNTVCT_EL0);
-    if (usb_connected) {
-        usb_connects++;
-        print("usb: connected; fresh command receive (session %s)\n", usb_session);
-    } else {
-        usb_disconnects++;
-        print("usb: disconnected; waiting for cable (session %s)\n", usb_session);
-    }
-}
-
-static void
-usb_transfer_event(const usb_device_event_data *data)
-{
-    if (data->transfer.status == UsbDeviceTransferStatusActive) return;
-    if (data->transfer.endpoint_index == USB_EP_OUT) usb_out_pending = 0;
-    if (data->transfer.endpoint_index == USB_EP_IN) usb_in_pending = 0;
-}
-
-/* Always service events before retrying a failed queue submission. Otherwise a
- * stale endpoint can reject Send forever while its disconnect stays unhandled. */
-static void
-usb_drain_events(void)
-{
-    for (unsigned i = 0; i < 64; i++) {
-        uint32_t msg = UsbDeviceEventNoEvent;
-        uint64_t size = 0;
-        usb_device_event_data data;
-        if (EFI_ERROR(USB->handle_event(&msg, &size, &data))) break;
-        if (msg == UsbDeviceEventNoEvent) break;
-        if (msg == UsbDeviceEventDeviceStateChange) usb_link_event(data.device_state);
-        else if (msg == UsbDeviceEventTransferNotification) usb_transfer_event(&data);
-    }
-}
-
-/* Returns a completed byte count or -1 on cancellation/link change. Active
- * notifications are not completions. Polling never abandons a queued buffer. */
+/*
+ * Pump controller events until a transfer on `endpoint` finishes.
+ * Returns the byte count, or -1 if the transfer was cancelled or the cable
+ * state changed. Keeps the watchdog fed while idle.
+ */
 static int64_t
 usb_wait(uint8_t endpoint)
 {
-    static uint64_t last_pet;
-    uint64_t freq = READ_SYSREG(CNTFRQ_EL0), began = READ_SYSREG(CNTVCT_EL0);
-    for (;;) {
-        uint32_t msg = UsbDeviceEventNoEvent;
-        uint64_t size = 0;
-        usb_device_event_data data;
-        if (USB_IDLE_SECONDS != 0 && running_live == NULL && !touch_diagnostic_retained() &&
-            READ_SYSREG(CNTVCT_EL0) - usb_last_activity > (uint64_t)USB_IDLE_SECONDS * freq) {
+	/* static: a long transfer is many short waits, and the watchdog must be fed across them */
+	static uint64_t last_pet;
+	uint64_t freq = READ_SYSREG(CNTFRQ_EL0), began = READ_SYSREG(CNTVCT_EL0);
+
+	for (;;) {
+		uint32_t msg = UsbDeviceEventNoEvent;
+		uint64_t size = 0;
+		usb_device_event_data data;
+
+		if (USB_IDLE_SECONDS != 0 && running_live == NULL && !touch_diagnostic_retained() &&
+            READ_SYSREG(CNTVCT_EL0) - usb_last_activity > (uint64_t)USB_IDLE_SECONDS * READ_SYSREG(CNTFRQ_EL0)) {
             print("usb: idle deadline reached, returning to Android\n");
             reboot();
         }
-        if(endpoint==0xff||endpoint==USB_EP_OUT)boot_menu_poll();
-        /* Display-only toggles must not cancel a pending download receive. */
-        if(boot_menu.action==OP13_MENU_LOGS)boot_menu_toggle_logs();
-        if(menu_upload_active)boot_menu.action=0; /* never boot/reset during a transfer */
-        /* Launch from the outer command loop, never from a pending RX wait.
-         * Cancel/drain its old receive before run_kernel starts USB polling. */
-        if(boot_menu.action){
-            if(endpoint!=0xff)usb_abort_pending(endpoint);
-            usb_rx_queued=0;
-            usb_drain_events();
-            return -1;
-        }
-        if (EFI_ERROR(USB->handle_event(&msg, &size, &data))) {
-            if (endpoint != 0xff) usb_abort_pending(endpoint);
-            return -1;
-        }
-        if (msg == UsbDeviceEventDeviceStateChange) {
-            usb_link_event(data.device_state);
-            return -1;
-        }
-        if (running_live != NULL && READ_SYSREG(CNTVCT_EL0) - began > 3 * freq) {
-            if (endpoint != 0xff) usb_abort_pending(endpoint);
-            return -1;
-        }
-        if (msg == UsbDeviceEventTransferNotification) {
-            usb_transfer_event(&data);
-            if (data.transfer.endpoint_index == endpoint &&
-                data.transfer.status != UsbDeviceTransferStatusActive) {
-                if (data.transfer.status == UsbDeviceTransferStatusCompleteOK && data.transfer.bytes_completed)
-                    usb_last_activity = READ_SYSREG(CNTVCT_EL0);
-                return data.transfer.status == UsbDeviceTransferStatusCompleteOK ?
-                    (int64_t)data.transfer.bytes_completed : -1;
-            }
-        }
-        if (READ_SYSREG(CNTVCT_EL0) - last_pet > freq) {
-            last_pet = READ_SYSREG(CNTVCT_EL0);
-            wdt_pet();
-        }
-    }
+        USB->handle_event(&msg, &size, &data);
+		if (msg == UsbDeviceEventDeviceStateChange) {
+			usb_connected = (data.device_state == UsbDeviceStateConnected);
+			return -1;
+		}
+		/* with a kernel running, a host that went away must not keep this core from watching it */
+		if (running_live != NULL && READ_SYSREG(CNTVCT_EL0) - began > 3 * freq) {
+			return -1;
+		}
+		if (msg == UsbDeviceEventTransferNotification && data.transfer.endpoint_index == endpoint) {
+			if (data.transfer.status == UsbDeviceTransferStatusCompleteOK && data.transfer.bytes_completed != 0) {
+				usb_last_activity = READ_SYSREG(CNTVCT_EL0);
+			}
+			return data.transfer.status == UsbDeviceTransferStatusCompleteOK ? (int64_t)data.transfer.bytes_completed : -1;
+		}
+		if (READ_SYSREG(CNTVCT_EL0) - last_pet > freq) {
+			last_pet = READ_SYSREG(CNTVCT_EL0);
+			wdt_pet();
+		}
+	}
 }
+
+static int usb_rx_queued;       /* usb_poll_command() has left the receive for the next command with the controller */
 
 static int64_t
 usb_rx(uint8_t *buf, uint64_t len)
 {
-    if (usb_rx_queued) {
-        usb_rx_queued = 0;
-    } else {
-        usb_drain_events();
-        if (!usb_connected) return -1;
-        if (EFI_ERROR(USB->send(USB_EP_OUT, len, buf))) {
-            /* Abort even when our flag was lost to a firmware bus reset. */
-            if (USB->abort_xfer) USB->abort_xfer(USB_EP_OUT);
-            usb_out_pending = 0;
-            usb_drain_events();
-            return -1;
-        }
-        usb_out_pending = 1;
-    }
-    return usb_wait(USB_EP_OUT);
+	if (usb_rx_queued) {
+		usb_rx_queued = 0;      /* (every command is received the same way, into the same buffer) */
+	} else if (EFI_ERROR(USB->send(USB_EP_OUT, len, buf))) {
+		return -1;
+	}
+	return usb_wait(USB_EP_OUT);
 }
 
 static int64_t
 usb_tx(const uint8_t *data, uint64_t len)
 {
-    usb_drain_events();
-    if (!usb_connected || len > USB_CHUNK) return -1;
-    if (data != usb_tx_buf) memcpy(usb_tx_buf, data, len);
-    if (EFI_ERROR(USB->send(USB_EP_IN, len, usb_tx_buf))) {
-        if (USB->abort_xfer) USB->abort_xfer(USB_EP_IN);
-        usb_in_pending = 0;
-        usb_drain_events();
-        return -1;
-    }
-    usb_in_pending = 1;
-    return usb_wait(USB_EP_IN);
+	if (data != usb_tx_buf) {
+		memcpy(usb_tx_buf, data, len);
+	}
+	if (EFI_ERROR(USB->send(USB_EP_IN, len, usb_tx_buf))) {
+		return -1;
+	}
+	return usb_wait(USB_EP_IN);
 }
 
 static void
 fb_reply(const char *code, const char *text)
 {
-    if (code[0] != 'I') screen_log_flush(1);
 	uint32_t n = 0;
 	for (; *code; code++) {
 		usb_tx_buf[n++] = (uint8_t)*code;
@@ -3980,7 +3733,6 @@ fb_reply(const char *code, const char *text)
 static void
 fb_reply_data(uint64_t len)
 {
-    screen_log_flush(1);
 	char msg[13] = "DATA00000000";
 	for (int i = 0; i < 8; i++) {
 		msg[4 + i] = "0123456789abcdef"[(len >> (28 - 4 * i)) & 0xf];
@@ -4003,28 +3755,10 @@ starts_with(const char *s, const char *prefix)
  * One command from the host. While a kernel runs on another core (running_live) only what does
  * not disturb it: questions, the screen, the log so far, and "oem stop".
  */
-#include "op13_brightness_probe.inc"
-#include "op13_dsi_probe.inc"
 static int touch_trace_stream;
 #include "trace.inc"
 #include "sm8750_diag.inc"
-#include "op13_wifi_clocks.inc"
 #include "op13_slider_probe.inc"
-#include "op13_wifi_mapping.inc"
-#include "op13_wifi_cesta_probe.inc"
-#include "op13_wifi_phy_probe.inc"
-#include "op13_wifi_aop_pdc.inc"
-#include "op13_wifi_link_probe.inc"
-#include "op13_wifi_mhi_survey.inc"
-#include "op13_wifi_smmu_globals.inc"
-#include "op13_wifi_dma_map.inc"
-#include "op13_wifi_dma_clocks.inc"
-#include "op13_wifi_bhi.inc"
-#include "op13_wifi_mhi_runtime.inc"
-#include "op13_wifi_ce_rings.inc"
-#include "op13_wifi_radio.inc"
-#include "op13_wifi_handoff.inc"
-#include "op13_wifi_rails.inc"
 #include "tlmm_config_diag.inc"
 #include "spi_config_diagnostics.inc"
 #include "geni_preflight_diag.inc"
@@ -4034,46 +3768,12 @@ static int touch_trace_stream;
 static int touch_clock_retained(void) { return geni_state.votes != 0; }
 static int touch_diagnostic_retained(void) { return touch_clock_retained() || identify_session.blocked || identify_session.panel_owned || bb_state.owned; }
 
-#include "op13_boot_menu.inc"
-static int op13_wifi_publish_transfer(void)
-{
- if(!op13_wifi_transfer_ready)return 0;
- uint64_t pa=touch_runtime_lease_address();
- if(!pa||(pa&0x3fff)||op13_wifi_handoff_snapshot.flags!=OP13_MHI_TRANSFER)return -1;
- struct mhi_host checked;
- if(op13_mhi_adopt(&checked,&op13_wifi_handoff_snapshot,(void*)(uintptr_t)op13_wifi_dma_pool,op13_wifi_mhi_host.ops,op13_wifi_mhi_host.context,0))return -2;
- memcpy((void*)(uintptr_t)(pa+256),&op13_wifi_handoff_snapshot,sizeof op13_wifi_handoff_snapshot);
- clean_dcache(pa,pa+0x4000);
- print("op13-wifi-handoff: immutable transfer published in fresh touch lease; old MHI owner remains quiesced\n");return 0;
-}
-
-
 static void
 fb_command(char *cmd)
 {
 	usb_last_activity = READ_SYSREG(CNTVCT_EL0);
 	int busy = running_live != NULL;
-    /* Preserve read-only live diagnostics; release UI resources BEFORE the
-     * existing hardware guards inspect a host preparation/upload command. */
-    if(!busy && !starts_with(cmd,"getvar:") && !str_eq(cmd,"oem log") &&
-       !str_eq(cmd,"upload") && !str_eq(cmd,"oem screenshot") && !str_eq(cmd,"oem menu-status") && !str_eq(cmd,"oem menu-view logs") && !str_eq(cmd,"oem menu-view menu") && !str_eq(cmd,"reboot") && !str_eq(cmd,"oem reboot")){
-        menu_ios_prepared=0;
-        if(boot_menu_stop()){
-            fb_reply("FAIL","menu touch cleanup failed; reboot required");return;
-        }
-    }
- /* A cold reset ends all hardware ownership; it must precede the touch
-  * lease guards, which correctly continue to prohibit RAM reuse and cleanup. */
- if(PLAT==&platform_dodge && (str_eq(cmd,"reboot")||str_eq(cmd,"oem reboot"))){
-  fb_reply("OKAY","cold resetting to Android");
-  BS->stall(200000);
-  ST->rt->reset_system(0 /* EfiResetCold */,0,0,NULL);
-  for(;;){}
- }
-    screen_quiet = busy;
-    if (!busy && !starts_with(cmd, "getvar:") && !str_eq(cmd, "upload") && !str_eq(cmd, "oem log"))
-        print("uefi command: %s\n", cmd);
- if(touch_runtime_pending && !str_eq(cmd,"oem screenshot") && !str_eq(cmd,"oem menu-status") && !str_eq(cmd,"oem menu-view logs") && !str_eq(cmd,"oem menu-view menu") && !str_eq(cmd,"oem sm8750-touch-status") &&
+ if(touch_runtime_pending && !str_eq(cmd,"oem sm8750-touch-status") &&
     !str_eq(cmd,"oem sm8750-touch-cleanup") && !str_eq(cmd,"oem log") &&
     !str_eq(cmd,"upload") && !str_eq(cmd,"oem stop") &&
     !(starts_with(cmd,"oem run")&&!touch_runtime_outstanding&&!identify_session.blocked) &&
@@ -4090,110 +3790,6 @@ fb_command(char *cmd)
   fb_reply("FAIL","touch resources retained; restart diagnostic boot");return;
  }
 
- if(op13_wifi_votes_stuck&&!op13_wifi_transfer_ready&&!starts_with(cmd,"getvar:")&&!str_eq(cmd,"oem log")&&!str_eq(cmd,"upload")&&!starts_with(cmd,"reboot")&&!str_eq(cmd,"oem reboot")&&!starts_with(cmd,"oem op13-wifi-smmu ")&&!str_eq(cmd,"oem op13-wifi-ce-init")&&!str_eq(cmd,"oem op13-wifi-radio")&&!str_eq(cmd,"oem op13-wifi-wmi")&&!str_eq(cmd,"oem op13-wifi-htt")&&!str_eq(cmd,"oem op13-wifi-mhi-export")&&!str_eq(cmd,"oem op13-wifi-transfer-prepare")&&!str_eq(cmd,"oem op13-wifi-rails")&&!str_eq(cmd,"oem op13-wifi-htc-error")&&!str_eq(cmd,"oem op13-wifi-wmi-log")&&!str_eq(cmd,"oem op13-wifi-stage-wmi")&&!str_eq(cmd,"oem op13-wifi-wmi-send")&&!str_eq(cmd,"oem op13-wifi-wmi-poll")&&!(download_to_wmi&&starts_with(cmd,"download:"))){fb_reply("FAIL","Wi-Fi resources retained; cold reset required");return;}
- if(op13_wifi_transfer_ready&&starts_with(cmd,"oem op13-wifi-")){
-  fb_reply("FAIL","MHI owner quiesced for Darwin; cold reboot before Wi-Fi diagnostics");return;
- }
- if(str_eq(cmd,"oem op13-wifi-transfer-prepare")){
-  if(busy||touch_runtime_pending||touch_diagnostic_retained()){fb_reply("FAIL","kernel or touch active");return;}
-  log_len=0;int rc=op13_wifi_handoff_export();
-  if(!rc){op13_wifi_handoff_snapshot.flags=OP13_MHI_TRANSFER;op13_wifi_transfer_ready=1;download_to_wmi=0;}
-  fb_reply(rc?"FAIL":"OKAY",rc?"MHI transfer preflight refused":"MHI owner quiesced; stage iOS, never poll Wi-Fi again before cold reset");return;
- }
- if(str_eq(cmd,"oem op13-wifi-rails")){
-  if(PLAT!=&platform_dodge||busy||touch_runtime_pending||touch_diagnostic_retained()||!op13_wifi_mhi_ready||op13_wifi_mhi_stopped||op13_wifi_radio_requested){fb_reply("FAIL","matched idle pre-mission Wi-Fi session required");return;}
-  log_len=0;efi_status wd=BS->set_watchdog_timer(20,0x10000,0,0);if(EFI_ERROR(wd)){fb_reply("FAIL","watchdog unavailable");return;}
-  int rc=op13_wifi_rails_vote();BS->set_watchdog_timer(0,0,0,0);
-  fb_reply(rc?"FAIL":"OKAY",rc?"supply votes failed; cold reset before retry":"six native WLAN supply votes retained in RAM session");return;
- }
- if(str_eq(cmd,"oem op13-wifi-mhi-export")){
-  if(busy||touch_runtime_pending||touch_diagnostic_retained()){fb_reply("FAIL","kernel or touch active");return;}
-  log_len=0;int rc=op13_wifi_handoff_export();
-  fb_reply(rc?"FAIL":"OKAY",rc?"MHI snapshot refused; inspect log":"private diagnostic snapshot staged; ownership NOT transferred");return;
- }
- if(str_eq(cmd,"oem op13-wifi-htt")){
-  if(busy||touch_runtime_pending||touch_diagnostic_retained()){fb_reply("FAIL","kernel or touch active");return;}
-  log_len=0;int rc=op13_wifi_htt_probe();
-  fb_reply(rc?"FAIL":"OKAY",rc?"HTT version not verified; inspect log":"HTT version3 received; data rings not configured");return;
- }
- if(str_eq(cmd,"oem op13-wifi-stage-wmi")){
-  if(busy||touch_runtime_pending||touch_diagnostic_retained()||!op13_wifi_wmi_abi_valid||op13_wifi_mhi_stopped||op13_wifi_ce_init_fault){fb_reply("FAIL","healthy WMI session required");return;}
-  download_to_wmi=1;download_to_ramdisk=0;op13_wifi_wmi_mailbox_size=0;
-  fb_reply("OKAY","next upload limited to private WMI RAM mailbox");return;
- }
- if(str_eq(cmd,"oem op13-wifi-wmi-send")||str_eq(cmd,"oem op13-wifi-wmi-poll")){
-  if(busy||touch_runtime_pending||touch_diagnostic_retained()){fb_reply("FAIL","kernel or touch active");return;}
-  log_len=0;
-  int rc=str_eq(cmd,"oem op13-wifi-wmi-send")?op13_wifi_wmi_send_mailbox():op13_wifi_wmi_poll();
-  fb_reply(rc?"FAIL":"OKAY",rc?"WMI operation failed; inspect log":"WMI operation complete; inspect READY/event log");return;
- }
- if(str_eq(cmd,"oem op13-wifi-htc-error")){
-  if(!op13_wifi_htc_error_len){fb_reply("FAIL","no rejected HTC packet");return;}
-  staged_data=(const char *)op13_wifi_htc_error;staged_len=op13_wifi_htc_error_len;
-  fb_reply("OKAY","private rejected HTC packet staged from owned RAM");return;
- }
- if(str_eq(cmd,"oem op13-wifi-wmi-log")){
-  if(!op13_wifi_wmi_capture_len){fb_reply("FAIL","no WMI events captured");return;}
-  staged_data=(const char *)op13_wifi_wmi_capture;staged_len=op13_wifi_wmi_capture_len;
-  fb_reply("OKAY","private captured WMI events staged from owned RAM");return;
- }
- if(str_eq(cmd,"oem op13-wifi-wmi")){
-  if(busy||touch_runtime_pending||touch_diagnostic_retained()){fb_reply("FAIL","kernel or touch active");return;}
-  log_len=0;int rc=op13_wifi_wmi_connect();fb_reply(rc?"FAIL":"OKAY",rc?"WMI negotiation refused/failed; inspect log":"WMI service ready received; scan/join not implemented yet");return;
- }
- if(str_eq(cmd,"oem op13-wifi-radio")){
-  if(busy||touch_runtime_pending||touch_diagnostic_retained()){fb_reply("FAIL","kernel or touch active");return;}
-  log_len=0;int rc=op13_wifi_radio_start();fb_reply(rc?"FAIL":"OKAY",rc?"WLAN/HTC stage refused or failed; inspect log":"HTC ready received; scan/data driver still absent");return;
- }
- if(str_eq(cmd,"oem op13-wifi-ce-init")){
-  if(busy||touch_runtime_pending||touch_diagnostic_retained()){fb_reply("FAIL","kernel or touch active");return;}
-  log_len=0;int rc=op13_wifi_ce_init();fb_reply(rc?"FAIL":"OKAY",rc?"CE initialization refused/failed; cold reset required":"seven owned CE rings ready; no WLAN mode sent");return;
- }
- if(starts_with(cmd,"oem op13-wifi-smmu ")){
-  if(busy||touch_runtime_pending||touch_diagnostic_retained()||!op13_wifi_mhi_ready){fb_reply("FAIL","requires idle MHI survey session");return;}
-  const char *n=cmd+19;
-  if(n[0]<'0'||n[0]>'9'||n[1]){fb_reply("FAIL","single bounded step required");return;}
-  int rc=n[0]=='0'?op13_wifi_qmi_files():n[0]=='1'?op13_wifi_qmi_memory():n[0]=='2'?op13_wifi_qmi_init():n[0]=='3'?op13_wifi_qmi_cap():n[0]=='4'?op13_wifi_mhi_poll():n[0]=='5'?op13_wifi_rddm_stage():n[0]=='8'?op13_wifi_dma_map():n[0]=='6'?op13_wifi_dma_clocks():n[0]=='7'?op13_wifi_mhi_runtime():op13_wifi_smmu_survey((unsigned)(n[0]-'0'));
-  fb_reply(rc?"FAIL":"OKAY",rc?"SMMU step refused/failed; inspect log":"SMMU step complete; resources retained");return;
- }
- if(str_eq(cmd,"oem op13-wifi-link")){
-  if(busy||touch_runtime_pending||touch_diagnostic_retained()){fb_reply("FAIL","kernel or touch resources active");return;}
-  wdt_set_ms(30000);
-  op13_wifi_survey_callback=op13_wifi_mhi_survey;
-  op13_wifi_power_preflight();op13_wifi_survey_callback=0;
-  fb_reply(op13_wifi_mhi_ready?"OKAY":"FAIL","MHI register survey; cold reset required; use oem log");return;
- }
- if(str_eq(cmd,"oem menu-ready")){
-  struct payload_info pi;
-  if(busy||!parse_payload(&pi,1)||!pi.kernel||!resident_rd_size||
-     !touch_runtime_accept(pi.cmdline)||!touch_runtime_token(pi.cmdline,"cpus=7")||
-     !touch_runtime_token(pi.cmdline,"bootcpu=1")||!touch_runtime_token(pi.cmdline,"op13_usb=1")){
-   fb_reply("FAIL","stage the iOS payload and system first");return;
-  }
-  menu_ios_prepared=1;
-  unsigned show_logs=boot_menu.show_logs;
-  op13_menu_init(&boot_menu,SCREEN.width,SCREEN.height);
-  boot_menu.show_logs=show_logs;
-  boot_menu.ios_ready=1;
-  boot_menu_draw();
-  boot_menu_start();
-  fb_reply("OKAY","iOS ready in RAM; use Boot iOS on the phone");return;
- }
- if(str_eq(cmd,"oem menu-view logs")||str_eq(cmd,"oem menu-view menu")){
-  if(busy||!boot_menu.visible){fb_reply("FAIL","idle visible menu required");return;}
-  unsigned want=str_eq(cmd,"oem menu-view logs");
-  if(boot_menu.show_logs!=want)boot_menu.action=OP13_MENU_LOGS;
-  fb_reply("OKAY","menu view queued");return;
- }
- if(str_eq(cmd,"oem menu-status")){
-  print("menu: visible %d touch-ready %d focus %d frames %d bad %d key-events %d ios-ready %d logs-view %d\n",
-   (uint64_t)boot_menu.visible,(uint64_t)menu_touch_ready,(uint64_t)boot_menu.focus,
-   (uint64_t)menu_touch_controller.frames,(uint64_t)menu_touch_controller.bad_frames,
-   (uint64_t)menu_key_events,(uint64_t)menu_ios_prepared,(uint64_t)boot_menu.show_logs);
-  print("menu: uploading %d upload-toggles %d\n",(uint64_t)menu_upload_active,(uint64_t)menu_upload_toggles);
-  print("menu: log-offset %d scroll-events %d\n",(uint64_t)big_console.history_scroll,(uint64_t)menu_log_scroll_events);
-  fb_reply("OKAY","menu status recorded; use oem log");return;
- }
  if(str_eq(cmd,"oem sm8750-display-te")){
   if(busy){fb_reply("FAIL","kernel running");return;}
   if(PLAT!=&platform_dodge || !GOP || !GOP->mode || !GOP->mode->info ||
@@ -4241,10 +3837,6 @@ fb_command(char *cmd)
   if(busy){fb_reply("FAIL","kernel running");return;}
   int r=op13_slider_probe();
   fb_reply(r?"FAIL":"OKAY","AK09970 sensor probe; use oem log");return;
- }
- if(str_eq(cmd,"oem op13-wifi-clocks")){
-  if(busy){fb_reply("FAIL","kernel running");return;}
-  op13_wifi_clocks();fb_reply("OKAY","getter-only PCIe clock query; use oem log");return;
  }
  if(str_eq(cmd,"oem sm8750-display-info")){
   if(busy){fb_reply("FAIL","kernel running");return;}
@@ -4312,25 +3904,19 @@ fb_command(char *cmd)
 			const char *var = cmd + 7;
 			if (str_eq(var, "product")) {
 				fb_reply("OKAY", "xnuloader");
-            } else if (str_eq(var, "uefi-name")) {
-                fb_reply("OKAY", OP13_UEFI_NAME);
-            } else if (str_eq(var, "usb-session")) {
-                fb_reply("OKAY", usb_session);
 			} else if (str_eq(var, "version")) {
 				fb_reply("OKAY", "0.5");
 			} else if (str_eq(var, "max-download-size")) {
-				fb_reply("OKAY", download_to_wmi ? "0x00000db8" : download_to_ramdisk ? "0xffffffff" : "0x03f00000");
+				fb_reply("OKAY", download_to_ramdisk ? "0xffffffff" : "0x03f00000");
 			} else if (str_eq(var, "result")) {
 				fb_reply("OKAY", last_result);
 			} else if (str_eq(var, "screen") && SCREEN.base != 0) {
 				/* width height bytes-per-row */
 				uint32_t mark = log_len;
-                int saved_quiet = screen_quiet; screen_quiet = 1;
 				print("%d %d %d", (uint64_t)SCREEN.width, (uint64_t)SCREEN.height, (uint64_t)SCREEN.stride);
 				log_buf[log_len] = 0;
 				fb_reply("OKAY", log_buf + mark);
 				log_len = mark;
-                screen_quiet = saved_quiet;
 			} else {
 				fb_reply("OKAY", "");
 			}
@@ -4356,11 +3942,9 @@ fb_command(char *cmd)
 			uint64_t limit = PAYLOAD_MAX_SIZE - 0x100000;
 			uint8_t *dest = (uint8_t *)PAYLOAD_BASE;
 			int to_ramdisk = download_to_ramdisk;
-            int to_wmi=download_to_wmi;download_to_wmi=0;
 
 			download_to_ramdisk = 0;
-            if(to_wmi){limit=sizeof op13_wifi_wmi_mailbox;dest=op13_wifi_wmi_mailbox;op13_wifi_wmi_mailbox_size=0;}
-            else if (to_ramdisk) {
+			if (to_ramdisk) {
 				limit = win_size - RESIDENT_RD_OFFSET - RESIDENT_RD_RESERVE;
 				dest = (uint8_t *)(win_base + RESIDENT_RD_OFFSET);
 				resident_rd_size = 0;
@@ -4369,12 +3953,6 @@ fb_command(char *cmd)
 				fb_reply("FAIL", "bad size");
 				return;
 			}
-            /* Lease touch only after the existing command guards pass. During
-             * this transfer policy permits Logs/Menu only; cleanup before reply. */
-            menu_upload_active=1;boot_menu.uploading=1;boot_menu.visible=1;
-            boot_menu.ios_ready=0;boot_menu_start();
-			uint64_t shown_percent = 0;
-            print("upload %s: 0%% (%d MiB)\n", to_ramdisk ? "system" : "payload", (total + 0xfffff) >> 20);
 			fb_reply_data(total);
 			while (got < total) {
 				uint64_t want = total - got > USB_CHUNK ? USB_CHUNK : total - got;
@@ -4384,28 +3962,13 @@ fb_command(char *cmd)
 				}
 				memcpy(dest + got, usb_rx_buf, (size_t)r);
 				got += (uint64_t)r;
-                uint64_t percent = got * 100 / total;
-                if (percent / 5 > shown_percent / 5) {
-                    shown_percent = percent;
-                    print("upload %s: %d%% (%d / %d MiB)\n",
-                        to_ramdisk ? "system" : "payload", percent, got >> 20, (total + 0xfffff) >> 20);
-                }
 			}
-            menu_upload_active=0;
-            if(boot_menu_stop()){
-                if(to_ramdisk)resident_rd_size=0;
-                else ((struct payload_header *)(uintptr_t)PAYLOAD_BASE)->magic=0;
-                fb_reply("FAIL","upload touch cleanup failed; reboot required");return;
-            }
 			if (got == total) {
-                if(to_wmi)op13_wifi_wmi_mailbox_size=(unsigned)total;
 				if (to_ramdisk) {
 					resident_rd_size = total;
 				}
 				fb_reply("OKAY", "");
 			} else {
-                if (!to_ramdisk) ((struct payload_header *)(uintptr_t)PAYLOAD_BASE)->magic = 0;
-                print("upload interrupted: %d / %d bytes; restage required\n", got, total);
 				fb_reply("FAIL", "short download");
 			}
 		} else if (starts_with(cmd, "upload")) {
@@ -4419,11 +3982,7 @@ fb_command(char *cmd)
 				sent += chunk;
 			}
 			fb_reply("OKAY", "");
-		} else if (starts_with(cmd, "oem op13-dsi-brightness")) {
- op13_dsi_probe(cmd+sizeof("oem op13-dsi-brightness")-1);
- } else if (starts_with(cmd, "oem op13-screen-brightness")) {
- op13_brightness_probe(cmd+sizeof("oem op13-screen-brightness")-1);
- } else if (starts_with(cmd, "oem screenshot")) {
+		} else if (starts_with(cmd, "oem screenshot")) {
 			/* stage the raw framebuffer; "getvar screen" gives its geometry */
 			if (SCREEN.base == 0) {
 				fb_reply("FAIL", "no display");
@@ -4539,7 +4098,6 @@ usb_poll_command(void)
 	}
 	if (!usb_rx_queued && usb_connected && !EFI_ERROR(USB->send(USB_EP_OUT, 511, usb_rx_buf))) {
 		usb_rx_queued = 1;
-        usb_out_pending = 1;
 	}
 	if (USB_IDLE_SECONDS != 0 && running_live == NULL && !touch_diagnostic_retained() &&
             READ_SYSREG(CNTVCT_EL0) - usb_last_activity > (uint64_t)USB_IDLE_SECONDS * READ_SYSREG(CNTFRQ_EL0)) {
@@ -4548,14 +4106,13 @@ usb_poll_command(void)
         }
         USB->handle_event(&msg, &size, &data);
 	if (msg == UsbDeviceEventDeviceStateChange) {
-        usb_link_event(data.device_state);
+		usb_connected = (data.device_state == UsbDeviceStateConnected);
+		usb_rx_queued = 0;
 		return;
 	}
 	if (msg != UsbDeviceEventTransferNotification || data.transfer.endpoint_index != USB_EP_OUT) {
 		return;
 	}
-    if (data.transfer.status == UsbDeviceTransferStatusActive) return;
-    usb_transfer_event(&data);
 	usb_rx_queued = 0;
 	if (data.transfer.status != UsbDeviceTransferStatusCompleteOK || data.transfer.bytes_completed == 0) {
 		return;
@@ -4569,11 +4126,8 @@ usb_poll_command(void)
 static void
 usb_command_loop(void)
 {
-	screen_quiet = 0;
-    print(OP13_UEFI_NAME ": iOS UEFI; live log enabled\n");
-    boot_menu_start();
+	screen_quiet = 1;
 	for (;;) {
-        boot_menu_dispatch();
 		char cmd[128];
 		int64_t n;
 
@@ -4718,7 +4272,7 @@ efi_main(efi_handle image, efi_system_table *st)
 	    READ_SYSREG(ID_AA64MMFR0_EL1), READ_SYSREG(CNTFRQ_EL0), (uint64_t)(uintptr_t)&__ImageBase);
 
 	#if defined(XNULOADER_PLATFORM_DODGE)
-    /* This device-only build keeps the same Dodge platform immutable. */
+	PLAT = &platform_dodge;
 #else
 	PLAT = &platform_qemu_virt;
 #endif
@@ -4730,17 +4284,13 @@ efi_main(efi_handle image, efi_system_table *st)
 		SCREEN.width = GOP->mode->info->width;
 		SCREEN.height = GOP->mode->info->height;
 		SCREEN.stride = GOP->mode->info->pixels_per_scanline * 4;
-#if !defined(XNULOADER_PLATFORM_DODGE)
 		for (unsigned i = 0; i < sizeof(platforms) / sizeof(platforms[0]); i++)
 			if (platforms[i]->fb_base == SCREEN.base)
 				PLAT = platforms[i];
 		if (PLAT == &platform_qemu_virt)
 			ramfb_phone_screen();
-#endif
 		print("display %d x %d at %x\n", (uint64_t)SCREEN.width, (uint64_t)SCREEN.height, SCREEN.base);
 	}
-	expand_console();
-	turtle_splash();
 	print("platform %s\n", PLAT->name);
 
 	install_exception_hook();

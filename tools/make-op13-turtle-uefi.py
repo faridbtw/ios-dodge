@@ -124,6 +124,7 @@ def main():
         'dtb_unchanged': True, 'ramdisk_and_signature_bytes_unchanged': True,
         'compression_roundtrips': 'passed', 'device_validated': False,
     }, indent=2) + '\n')
+    (ROOT / 'assets/uefi/turtle-logo-uefi.bmp').write_bytes(replacement)
     print(output)
 
 

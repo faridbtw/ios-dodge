@@ -1,0 +1,35 @@
+{
+  "status": "verified-percent-and-live-charging",
+  "android_baseline_percent": 100,
+  "ios_kernel_percent": 100,
+  "native_registry_percent": 100,
+  "native_iops_percent": 100,
+  "native_iops_source_count": 1,
+  "external_connected": true,
+  "charging": true,
+  "from_dsp": true,
+  "sample_voltage_mv": 4456,
+  "sample_current_ma": 116,
+  "sample_temperature_c": 38,
+  "charging_commands_added": false,
+  "kernel_sha256": "5f5221979cbdd271607234de772738fea040f2df983b4b595362c101b25d0650",
+  "usb_disconnect_test_pending": false,
+  "user_feedback": "Indicator clears; reconnected",
+  "observed_states": [
+    [
+      1,
+      1
+    ],
+    [
+      0,
+      1
+    ],
+    [
+      1,
+      1
+    ]
+  ],
+  "hardware_disconnected_seen": true,
+  "hardware_reconnected_last": true,
+  "visual_confirmation": "IMG_0711.HEIC shows filled green battery with 100"
+}

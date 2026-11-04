@@ -17,7 +17,7 @@ ROOT = Path(__file__).resolve().parents[1]
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument('--serial', required=True)
+    parser.add_argument('--serial', default='3B1F6GE8WTX79TGT')
     parser.add_argument('--wait', type=int, default=0)
     parser.add_argument('--output', type=Path,
         default=ROOT / 'diagnostics/20261025-adreno120/android')

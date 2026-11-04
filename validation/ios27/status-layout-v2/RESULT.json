@@ -1,0 +1,14 @@
+{
+  "status": "island-position-confirmed-statusbar-unfixed",
+  "verified": false,
+  "ram_only": true,
+  "phone_storage_written": false,
+  "kernel": "battery-v1/kernel unchanged",
+  "statusbar": "native UIStatusBar_Modern fallback with native SpringBoard data",
+  "island": "native sensor125x30/top4, matching statusbar avoidance, portrait375x812 only",
+  "island_user_confirmed": true,
+  "clock_user_confirmed": false,
+  "battery_position_user_confirmed": false,
+  "evidence": "User: dynamic island now in right place but battery not(time still not see)",
+  "reason": "Base implementationClass override did not change actual STUIStatusBar_Wrapper allocation"
+}

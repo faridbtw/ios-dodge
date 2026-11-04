@@ -1,0 +1,2 @@
+/redwood/bin/metal_props on RedwoodMetal NativeAdrenoMetalDevice
+exec /sbin/launchd.ios

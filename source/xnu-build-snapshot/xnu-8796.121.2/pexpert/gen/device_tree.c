@@ -274,30 +274,24 @@ SecureDTEntryIsEqual(const DTEntry ref1, const DTEntry ref2)
 	return ref1 == ref2;
 }
 
-/*
- * The walk's place in the tree is the caller's own (`cursor`): with one static variable for it,
- * two threads searching at the same time moved each other's walk out of the tree and panicked
- * ("Device tree pointer outside of device tree region").
- */
-static int find_entry(char const **cursor, const char *propName, const char *propValue, DTEntry *entryH);
+static char const *startingP;         // needed for find_entry
+int find_entry(const char *propName, const char *propValue, DTEntry *entryH);
 
 int
 SecureDTFindEntry(const char *propName, const char *propValue, DTEntry *entryH)
 {
-	char const *cursor;
-
 	if (!DTInitialized) {
 		return kError;
 	}
 
-	cursor = (char const *)DTRootNode;
-	return find_entry(&cursor, propName, propValue, entryH);
+	startingP = (char const *)DTRootNode;
+	return find_entry(propName, propValue, entryH);
 }
 
-static int
-find_entry(char const **cursor, const char *propName, const char *propValue, DTEntry *entryH)
+int
+find_entry(const char *propName, const char *propValue, DTEntry *entryH)
 {
-	DeviceTreeNode const *nodeP = (DeviceTreeNode const *) (void const *) *cursor;
+	DeviceTreeNode const *nodeP = (DeviceTreeNode const *) (void const *) startingP;
 	unsigned int k;
 
 	ASSERT_HEADER_IN_DT(nodeP, sizeof(DeviceTreeNode));
@@ -305,14 +299,14 @@ find_entry(char const **cursor, const char *propName, const char *propValue, DTE
 	if (nodeP->nProperties == 0) {
 		return kError;                        // End of the list of nodes
 	}
-	*cursor = (char const *) (nodeP + 1);
+	startingP = (char const *) (nodeP + 1);
 
 	// Search current entry
 	for (k = 0; k < nodeP->nProperties; ++k) {
-		DeviceTreeNodeProperty const *propP = (DeviceTreeNodeProperty const *) (void const *) *cursor;
+		DeviceTreeNodeProperty const *propP = (DeviceTreeNodeProperty const *) (void const *) startingP;
 		ASSERT_PROP_IN_DT(propP);
 
-		*cursor += sizeof(*propP) + ((propP->length + 3) & -4);
+		startingP += sizeof(*propP) + ((propP->length + 3) & -4);
 
 		if (strcmp(propP->name, propName) == 0) {
 			if (propValue == NULL || strcmp((char const *)(propP + 1), propValue) == 0) {
@@ -325,7 +319,7 @@ find_entry(char const **cursor, const char *propName, const char *propValue, DTE
 
 	// Search child nodes
 	for (k = 0; k < nodeP->nChildren; ++k) {
-		if (find_entry(cursor, propName, propValue, entryH) == kSuccess) {
+		if (find_entry(propName, propValue, entryH) == kSuccess) {
 			return kSuccess;
 		}
 	}
