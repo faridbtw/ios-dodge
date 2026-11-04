@@ -1,143 +1,162 @@
-OnePlus 13: current iOS RAM boot quickstart
-==========================================
+iOS19 branch — source checkout notes
+===================================
 
-Current iOS UEFI: Project Boot (Boot iOS and Return to Android menu):
-  experimental/wifi/darwin-handoff-v25/project-boot-ios-uefi.img
+This repository does not contain Apple images, firmware, calibration or
+compiled boot artifacts. The local-workspace commands below require those
+prepared local directories and are not standalone checkout builds.
 
-Current Wi-Fi + GPU + wallpaper + display + Sileo + flashlight + brightness payload (Wi-Fi verified 2026-10-30):
-  experimental/wifi/darwin-station-v14/payload.bin
-Matching LOCAL system RAM image:
-  experimental/sileo/v1/system-sileo.apfs
+From this checkout, build the source helpers with your local SDK:
+python3 source/ios19/tools/build-compat.py --output build/ios19-root --bootstrap
 
-Sileo2.5.1 appears and opens (user confirmed). Procursus/apt/dpkg, ElleKit
-and PreferenceLoader are included. Package installs/settings reset after a
-cold reboot. Wi-Fi scan/join, WPA2 keys, IPv4, DNS and HTTPS are verified on network the tested WPA2 network.
-User confirmed Wi-Fi off/on and Safari work. Package downloads and arbitrary
-tweak compatibility still need separate checks. FPS work is stopped. See SILEO-RESUME.txt.
-Original non-Sileo fallback: experimental/display/anti-tear-v1/payload.bin
-with the unchanged project-root system.apfs.
+To use a prepared, private iOS19 profile with the portable runner:
+python3 source/ios19/tools/boot-ios19.py --profile /path/to/BOOT-PREFLIGHT.json --serial YOUR_SERIAL --check
+python3 source/ios19/tools/boot-ios19.py --profile /path/to/BOOT-PREFLIGHT.json --serial YOUR_SERIAL
 
-Adreno830 GLES hardware rendering with Mesa26.2.5, native live battery and
-alert slider. Seven iOS cores run; CPU0 stays in firmware for live USB logs.
-User confirmed scrolling, battery and slider work. No 120fps claim; sustained
-stability still needs longer observation. Metal is off.
-Flashlight: Control Center on/off and brightness levels are user-confirmed in this build. The native
-PM8550 driver uses all four LED channels, matching Android's torch setup.
-Brightness requests are capped at the tested current (30 mA per channel), and
-this initial implementation switches off after 30 seconds per activation.
-Turn the button off and on again to start another activation. The worker
-sleeps between checks to avoid a continuous CPU load.
+Python 3.11+ is required. --check verifies hashes without contacting the
+phone. Keep the system, payload and UEFI from the same profile. Full source
+and local-input requirements: source/ios19/README.md.
 
-Screen brightness: Settings and Control Center sliders now control the panel
-through native DCS51 commands (user confirmed). The helper enables only the
-display configuration AHB clock before iOS starts. No framebuffer dimming.
-Details and fallback: SCREEN-BRIGHTNESS-RESUME.txt.
+The following guide records the owner's original prepared workspace layout.
+For another machine, adapt the paths and serial; the compiled files remain
+local inputs. The iOS19 branch's current snapshot is verified-slider-v6.
 
-The centered turtle, larger logs and USB reconnect implementation are retained.
-Project Boot retains the Boot iOS and Return to Android buttons. Tap a button, or
-select with Volume and confirm with Power. The turtle stays centered.
-Boot iOS is disabled until the Mac uploads the payload and system into RAM.
-Add --menu to the normal boot command below to upload and wait for the button.
-Without --menu the host starts iOS immediately as before. A cold restart loses
-the RAM images: upload again before using Boot iOS. The old v13/v14 images
-remain available through the legacy GLES helper and its --loader option. Menu launch reached SpringBoard
-and the Adreno renderer in live logs; user confirmed iOS starts and touch works.
+OnePlus 13 — iOS 16, iOS 27 and iOS 19 RAM boot
+Updated: 2026-11-05
+================================================
 
-Screen tearing: frames are now composed off-screen and copied to scanout
-after the physical panel TE edge. User confirmed horizontal tearing is gone
-and scrolling is usable. Observed TE period 8,290 us (~120.6 Hz), final-copy
-samples 1.1–2.9 ms, no TE timeout. Application rendering at 120 FPS remains unverified.
-Working wallpaper-only GPU fallback: experimental/wallpaper/picker-v3-guarded/payload.bin.
-Display source/build/validation: DISPLAY-RESUME.txt.
+All three boots run from RAM. Use fastboot boot only to load UEFI.
+Never flash or erase phone partitions. A cold reboot loses the uploaded
+system, installed packages and changed settings; upload again to boot iOS.
+Do not mix a version's UEFI, payload or system image with another profile.
 
-Wallpapers: use Settings > Wallpaper > Add New Wallpaper. User confirmed
-selection works. Native catalog services are available and the Metal-only
-home-preview capture uses a scoped CoreGraphics replacement. Preview images
-were generated without the earlier PosterBoard aborts in the saved test.
-Lock-screen long-press selection remains DISABLED to avoid its black hosted
-scene. That separate picker rendering problem is still unfinished.
+Before any boot
+---------------
+1. Start Android, enable USB debugging, connect USB and authorize this Mac.
+2. Keep adb and fastboot on PATH. Use /opt/homebrew/bin/python3 (Python 3.11+
+   is required by the iOS 27/19 runners; the macOS system Python is too old).
+3. Check the connection: adb devices
+   This phone's serial: YOUR_SERIAL; Android platform: sun.
+4. Choose ONE command below. The helper reboots Android to the bootloader,
+   loads UEFI with fastboot boot, uploads the matching images and starts iOS.
+   Keep USB connected until uploading and startup have finished.
 
-Boot from Android
------------------
-Keep the matching system-sileo.apfs at the local path above. Never publish
-either system image. The Wi-Fi helper selects the matching Sileo image automatically.
-Run from this project directory, using the connected phone's serial:
+A UEFI screen alone does not contain iOS: the Mac must upload the RAM images.
+The iOS 27/19 runners already contain this phone's serial; edit SERIAL in
+that runner when using a different device. They create dated phone-* logs.
 
-/opt/homebrew/bin/python3 tools/boot-op13-wifi.py --serial YOUR_SERIAL --output diagnostics/ios-wifi-next
+For a later boot from an existing iOS session, return to Android first.
+Do not reuse a stopped GPU/DSP session or use oem stop for another boot.
 
-Use a NEW diagnostics output directory each time. The helper checks payload, kernel, UEFI, firmware and system hashes, verifies
-Android platform sun, uses fastboot boot and prepares native Peach rails, DMA,
-firmware/QMI and the exclusive MHI handoff before staging iOS. It prepares
-slider/touch and the screen clock, then captures live logs and leaves iOS running.
-Add --menu to wait for the Boot iOS button. Cold boot loses RAM-only network
-settings; select the network and enter its password in iOS again if needed.
-Do not use the old GLES-only helper for this Wi-Fi payload: it lacks the handoff.
-It never flashes or erases partitions. Cold reset before another GPU session:
-the GPU retains protected memory and cannot safely return to a reused loader.
-With the selected Project Boot UEFI, return to Android from live seven-core iOS with:
+Choose your version
+-------------------
 
-fastboot -s xnuloader reboot
+iOS 16.5 / 20F66 — GLES, Wi-Fi and Sileo
+---------------------------------------
+cd ~/Documents/Porting/OnePlus13-iOS-RAM
+/opt/homebrew/bin/python3 tools/boot-op13-wifi.py --serial YOUR_SERIAL --output "diagnostics/ios16-$(date +%Y%m%d-%H%M%S)"
 
-This was tested: Android completed startup in about 23 seconds. A physical
-restart is only needed if USB/firmware itself is unresponsive. Do not use oem
-stop to reuse GPU memory. Ordinary reset is separate from touch cleanup.
+Add --menu to upload and wait for the Boot iOS button. Without it, the host
+starts iOS automatically. Use a new diagnostics output directory every time.
 
-Read-only package check without contacting the phone:
+Matching local files selected by the helper:
+  UEFI:    experimental/wifi/darwin-handoff-v25/project-boot-ios-uefi.img
+  Payload: experimental/wifi/darwin-station-v14/payload.bin
+  System:  experimental/sileo/v1/system-sileo.apfs
+
+Verified: Adreno 830 GLES / Mesa 26.2.5, seven iOS CPU cores, live firmware
+USB, touch/buttons, battery and charging, alert slider, Wi-Fi scan/join and
+Safari, Sileo opening, flashlight including levels, screen brightness in
+Settings and Control Center. Settings wallpaper selection works; lock-screen
+long-press selection remains disabled. Minor app-switcher tearing remains.
+Sound is unfinished; 120 FPS application rendering is not established.
+Wi-Fi credentials/settings may need entering again after a cold boot.
+
+Read-only package validation, without contacting the phone:
 /opt/homebrew/bin/python3 tools/boot-op13-wifi.py --check
 
-Live diagnostics during this seven-core GLES session:
+Return to Android while firmware USB responds:
+fastboot -s xnuloader reboot
+
+Details: BUGLIST.txt, SILEO-RESUME.txt, experimental/wifi/WORKING.md,
+SCREEN-BRIGHTNESS-RESUME.txt and WALLPAPER-RESUME.txt.
+
+
+iOS 27.2 / 24B119 — experimental Metal build
+--------------------------------------------
+/opt/homebrew/bin/python3 ~/Documents/Porting/OnePlus13-iOS-RAM/experimental/ios27/v2/boot-ios27.py
+
+The runner selects experimental/ios27/v2/BOOT-PREFLIGHT.json:
+  UEFI:    experimental/ios27/v2/project-boot-ios27.img
+  Payload: experimental/ios27/v2/status-layout-v4/payload.bin
+  Boot:    experimental/ios27/v2/status-layout-v4/boot.apfs
+  System:  experimental/ios27/v2/system-registration-test.apfs
+
+Native Metal UI, touch/wake and seven-core operation have been tested.
+Live battery/charging, Dynamic Island placement and battery placement were
+user-confirmed. The status-bar clock remains missing. Wallpaper draws, but
+wallpaper selection remains unfinished. Some apps can freeze or respring;
+graphics/performance are still experimental. Wi-Fi and audio are disabled
+in this selected profile. Do not assume iOS 16 feature support carries over.
+
+Return to Android while firmware USB responds:
+fastboot -s xnuloader oem reboot
+
+Details: experimental/ios27/v2/QUICKSTART.txt and IOS27-RESUME.txt.
+
+
+iOS 19.0 Internal / 23A191a — Solarium build
+-------------------------------------------
+Recommended, user-confirmed slider/battery/Island build:
+/opt/homebrew/bin/python3 ~/Documents/Porting/solarium19/oneplus13-ram/verified-slider-v6/boot-ios19.py
+
+Preserved wallpaper-only fallback:
+/opt/homebrew/bin/python3 ~/Documents/Porting/solarium19/oneplus13-ram/verified-wallpaper-v4/boot-ios19.py
+
+This snapshot has its own checked profile and matching UEFI, payload,
+boot.apfs and boot-system.apfs. Preserve it as the known working fallback.
+User-confirmed: wake, touch, much smoother scrolling, wallpaper display and
+wallpaper selection. Two captured five-second windows reached 52 and 59
+presented FPS; this is not a guarantee of every app's frame rate.
+V6 adds the verified alert slider: bottom Ring, middle Silent, top DND.
+V5 remains the battery/Island fallback. Both enable native live battery data
+and fix battery/Island positions. Raw
+DSP percentage accuracy/smoothing needs checking (100% versus Android
+earlier 90%). V4 keeps battery disabled. Wi-Fi and audio remain disabled in
+both profiles. The visible status-bar clock remains absent.
+Home Screen > Edit > Customize (icon color) can respring; that is a separate
+unfixed issue, not the now-working wallpaper picker.
+
+Next-boot candidate with displayed model name "iPhone 15 Pro Max":
+/opt/homebrew/bin/python3 ~/Documents/Porting/solarium19/oneplus13-ram/boot-ios19.py
+
+The top-level BOOT-PREFLIGHT.json selects project-boot-ios19-iphone15.img.
+Only the displayed model-name strings changed. Hardware compatibility
+identifiers and the working wallpaper kernel/system are preserved. Container
+checks passed and the UEFI booted in the battery/layout test; the displayed
+name in Settings has not been separately confirmed.
+The verified snapshot still reports the earlier compatibility model name.
+
+Return to Android while firmware USB responds:
+fastboot -s xnuloader oem reboot
+
+Details: ../solarium19/oneplus13-ram/QUICKSTART.txt and STATUS.md there.
+
+
+During any RAM session
+----------------------
+After startup you may unplug USB; iOS keeps running while the phone stays on.
+USB must be connected for host diagnostics. Reconnection behavior is only
+verified for profiles where it has actually been tested; these are firmware
+fastboot diagnostics, not an iOS SSH/file shell.
+
+After the boot helper has finished, read live logs with ONE host client:
 fastboot -s xnuloader getvar result
 fastboot -s xnuloader oem log
 fastboot -s xnuloader get_staged ios-live.log
 
-Eight-core software-renderer fallback
-------------------------------------
-The previous working payload remains:
-  experimental/slider/live-original-compositor-v1/payload.bin
+Do not issue concurrent commands while a boot/upload/log helper owns USB.
+If software reboot or USB stops responding, hold Power + Volume Up until
+restart, let Android finish loading, then run the chosen boot command again.
 
-/opt/homebrew/bin/python3 tools/boot-op13-play.py --serial YOUR_SERIAL --payload experimental/slider/live-original-compositor-v1/payload.bin --output diagnostics/ios-software-next
-
-This fallback uses eight cores and gl=0; it lacks live USB access during iOS.
-Its complete earlier instructions are in QUICKSTART.pre-gles-20261028.txt.
-Sound remains paused at SOUND-RESUME.txt. Wi-Fi evidence and remaining checks:
-source/wifi-peach/WORKING.md. Previous brightness-only payload/helper remain
-available as the no-Wi-Fi fallback.
-GPU build/recovery details: GPU-RESUME.txt.
-Wallpaper and reset implementation/validation: WALLPAPER-RESUME.txt.
-
-Linux / Windows is a DIFFERENT second UEFI
------------------------------------------
-experimental/multiboot/linux-windows-v1/dodge-uefi.img
-
-Do not use that image for the iOS staging sequence. It is a separate EFI
-manager for supplied ARM64 FAT boot media. Actual Linux/Windows OS boots
-are not yet verified. Its instructions are in:
-experimental/multiboot/linux-windows-v1/README.txt
-
-If that manager is idle, fastboot -s xnuloader reboot returns to Android;
-then follow the iOS instructions above. If an OS has taken over, physically
-restart instead. The second image does not replace the current iOS UEFI.
-
-UEFI source/build notes: experimental/uefi-turtle/README.txt
-
-Optional live-USB iOS profile (verified 2026-10-26)
-------------------------------------------------
-Use the dedicated seven-core profile to retain USB diagnostics during iOS:
-
-/opt/homebrew/bin/python3 tools/boot-op13-live-usb.py --serial YOUR_SERIAL --payload experimental/usb-live/seven-core-v1/payload.bin --output diagnostics/usb-next
-
-CPU0 remains in firmware; iOS runs on seven cores. Live log downloads and
-physical USB reconnection were verified while iOS stayed running. Touch and
-battery were confirmed by the user. This is firmware fastboot access, not an
-iOS SSH/file shell. The normal eight-core payload remains available.
-
-Read live logs:
-fastboot -s xnuloader getvar result
-fastboot -s xnuloader oem log
-fastboot -s xnuloader get_staged ios-live.log
-
-Source-only checkout: recreate the local payload with
- tools/make-op13-live-usb-payload.py and your locally built matching kernel.
-Boot images, system.apfs, calibration and raw logs are not included in Git.
-
-Current status summary: STATUS.json. Remaining issues: BUGLIST.txt.
+Apple system images, IPSWs, firmware, private calibration and raw logs stay
+local. Do not add system.apfs or any other Apple system image to GitHub.

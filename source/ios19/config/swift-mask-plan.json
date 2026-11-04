@@ -1,0 +1,47 @@
+{
+  "image": "dyld_shared_cache_arm64e.01",
+  "mapping_va": "0x180090000",
+  "mapping_fileoff": 0,
+  "changes": [
+    {
+      "va": "0x181283570",
+      "before": "0x927d8d33",
+      "after": "0x927d8933"
+    },
+    {
+      "va": "0x181283670",
+      "before": "0x927d8d08",
+      "after": "0x927d8908"
+    },
+    {
+      "va": "0x181283684",
+      "before": "0x927d8d08",
+      "after": "0x927d8908"
+    },
+    {
+      "va": "0x1812836ac",
+      "before": "0x927d8d09",
+      "after": "0x927d8909"
+    },
+    {
+      "va": "0x1812836b8",
+      "before": "0x927d8d29",
+      "after": "0x927d8929"
+    },
+    {
+      "va": "0x1812836d0",
+      "before": "0x927d8d14",
+      "after": "0x927d8914"
+    },
+    {
+      "va": "0x181283af4",
+      "before": "0x927d8d1b",
+      "after": "0x927d891b"
+    },
+    {
+      "va": "0x181293ad0",
+      "before": "0x927d8d18",
+      "after": "0x927d8918"
+    }
+  ]
+}

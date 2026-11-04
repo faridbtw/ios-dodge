@@ -1,0 +1,3 @@
+
+# Unified patch context intentionally prefixes blank/tab-indented lines with a space.
+source/ios19/patches/*.patch -whitespace

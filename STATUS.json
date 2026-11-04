@@ -1,130 +1,57 @@
 {
-  "updated": "2026-10-30",
-  "project": "ios-dodge",
-  "device": "OnePlus 13 / SM8750 / dodge",
+  "updated": "2026-11-05",
+  "ios_version": "19.0 Internal",
+  "build": "23A191a",
   "ram_only": true,
   "phone_partition_writes": false,
-  "selected_build": {
-    "uefi": "experimental/wifi/darwin-handoff-v25/project-boot-ios-uefi.img",
-    "uefi_sha256": "2ee6c2a0def66dcb9ebe7a33268d3a1372202f1501de7219083fb647ab760955",
-    "payload": "experimental/wifi/darwin-station-v14/payload.bin",
-    "payload_sha256": "a876182c4edc815d706d76d7aa2a321b3913c52ba36e33d0aac1daf7d3d0f42f",
-    "renderer": "Adreno 830 / Mesa 26.2.5 / GLES 3.2",
-    "ios_cores": 7,
-    "firmware_usb_cpu": 0,
-    "metal_enabled": false,
-    "artifacts_in_repository": false,
-    "framebuffer_advertised_hz": 60,
-    "system_image": "experimental/sileo/v1/system-sileo.apfs",
-    "system_sha256": "ece8098938ebbc265c8c782bf705cf2f74747deea002ec3a5548cb4307909ed3",
-    "kernel_sha256": "ca2cb1f8c057ceba910d0ae1b8f01f1270746380cfcf1931fa2c08f7de132147",
-    "boot_helper": "tools/boot-op13-wifi.py"
-  },
-  "verified": [
-    "iOS boot and touch",
-    "Adreno hardware GLES rendering",
-    "horizontal tearing resolved in user testing",
-    "Settings wallpaper selection and scoped preview capture",
-    "live battery percentage and charging updates",
-    "alert slider ring/silent/Do Not Disturb",
-    "seven-core firmware USB diagnostics",
-    "live USB cold reboot to Android",
-    "centered turtle and larger console logs",
-    "Sileo2.5.1 installed and user-confirmed opens; writable Procursus bootstrap initialized",
-    "Control Center flashlight on/off and brightness levels, user-confirmed; native four-channel PM8550 driver",
-    "Screen brightness in Settings and Control Center; user-confirmed native panel dim/bright",
-    "Power and both volume buttons user-confirmed after restoring saved brightness build",
-    "Settings Wi-Fi network discovery and WPA2/CCMP association",
-    "Wi-Fi DHCP IPv4, DNS and HTTPS HTTP200",
-    "Wi-Fi off/on and Safari loading user-confirmed",
-    "Project Boot touch and volume/power menu; log visibility and scroll controls"
+  "selected_local_snapshot": "verified-slider-v6",
+  "user_confirmed": [
+    "wake and touch",
+    "much smoother scrolling",
+    "wallpaper display and selection",
+    "battery indicator and battery/Dynamic Island positions",
+    "alert slider: bottom Ring, middle Silent, top Do Not Disturb"
   ],
-  "open_issue_ids": [
-    "AUDIO-01",
-    "WALLPAPER-02",
-    "GPU-02",
-    "USB-02",
-    "DISPLAY-03"
+  "measured": {
+    "frame_windows_fps": [
+      52,
+      59
+    ],
+    "frame_window_duration_seconds": 5,
+    "native_edr_start_us": 6292,
+    "native_iops_source_count": 1,
+    "dnd_take_and_release_succeeded": true,
+    "slider_positions": [
+      1,
+      2,
+      3,
+      2,
+      1
+    ]
+  },
+  "limitations": [
+    "status-bar clock still absent despite native enabled time producer",
+    "DSP raw SOC100 versus earlier Android90: accuracy/smoothing not validated",
+    "USB charging disconnect/reconnect not yet retested for this iOS19 profile",
+    "Home Screen Edit Customize icon colors can respring",
+    "Wi-Fi and audio disabled",
+    "most normal apps are absent or placeholders in the source image",
+    "60/120 FPS across apps not established",
+    "displayed iPhone15ProMax name UEFI booted; Settings name not separately confirmed"
   ],
-  "unverified_issue_ids": [
-    "PERF-01",
-    "DISPLAY-01",
-    "WIFI-02"
+  "excluded": [
+    "Apple images/caches and original archive",
+    "proprietary firmware and device calibration",
+    "compiled kernels/payloads/UEFI/helpers",
+    "raw logs/screenshots and guest AIR/shader captures"
   ],
-  "audio_work": "paused",
-  "lock_screen_picker_enabled": false,
-  "native_eight_core_usb_verified": false,
-  "application_120fps_verified": false,
-  "sustained_stability_verified": false,
-  "last_requested_phone_handoff": {
-    "os": "iOS Wi-Fi build",
-    "startup_confirmed": true,
-    "note": "Left running in iOS after verified association, Internet and user-confirmed reconnection."
-  },
-  "evidence": [
-    "validation/gpu-gles/STATUS.json",
-    "validation/display/STATUS.json",
-    "validation/wallpaper/STATUS.json",
-    "validation/live-usb/STATUS.json",
-    "validation/uefi/live-reset/STATUS.json",
-    "validation/20261028-source-checks.json",
-    "validation/screen-brightness/STATUS.json",
-    "validation/wifi/STATUS.json",
-    "validation/uefi/PROJECT-BOOT-v25.json"
-  ],
-  "display_observations": {
-    "panel_te_period_us": 8290,
-    "final_copy_min_us": 1110,
-    "final_copy_max_us": 2943,
-    "saved_commit_samples": 13,
-    "te_timeouts_reported": 0,
-    "user_confirmed_horizontal_tearing_gone": true,
-    "application_fps_measured": false,
-    "user_reported_app_switcher_horizontal_tearing": true,
-    "switcher_test_payload": "experimental/display/anti-tear-v2/payload.bin",
-    "switcher_work": "paused at user request",
-    "switcher_fix_user_confirmed": false,
-    "switcher_candidate_button_regression": true,
-    "stable_build_buttons_user_confirmed": true,
-    "residual_tearing_severity": "minor; user says almost gone and not a priority"
-  },
-  "sileo": {
-    "version": "2.5.1",
-    "user_confirmed_opens": true,
-    "bootstrap_in_ram": true,
-    "ellekit": "0.4.5",
-    "network_package_downloads_verified": false,
-    "arbitrary_tweaks_verified": false
-  },
-  "fps_work": "stopped at user request",
-  "flashlight": {
-    "user_confirmed_on_off": true,
-    "channels": 4,
-    "effective_max_ma_per_channel": 30,
-    "automatic_cutoff_seconds": 30,
-    "worker_sleeps": true,
-    "source": "source/xnu-build-snapshot/xnu-8796.121.2/bsd/dev/redwood_torch.c",
-    "payload": "experimental/screen-brightness/control-v2/payload.bin",
-    "user_confirmed_brightness_levels": true
-  },
-  "screen_brightness": {
-    "user_confirmed_settings": true,
-    "user_confirmed_control_center": true,
-    "native_dcs51": true,
-    "normal_max_dbv": 3515,
-    "minimum_dbv": 8,
-    "config_ahb_vote": true,
-    "framebuffer_dimming": false,
-    "source": "source/xnu-build-snapshot/xnu-8796.121.2/bsd/dev/op13_screen.c",
-    "validation": "validation/screen-brightness/STATUS.json"
-  },
-  "wifi": {
-    "working": true,
-    "scan_and_join_user_confirmed": true,
-    "ipv4_dns_https_verified": true,
-    "toggle_and_safari_user_confirmed": true,
-    "native_umac_wake_after_unified_ready_verified": true,
-    "long_term_stability_verified": false,
-    "evidence": "validation/wifi/STATUS.json"
+  "validation_scope": "Targeted source patch checks and signed compatibility-helper builds; native phone tests plus user feedback. Full upstream CI was not run.",
+  "publication_checks": {
+    "compatibility_helpers": "rebuilt and dynamic helpers strictly signed/verified from committed paths",
+    "static_pid1_handoff": "compiled from included matching mini shim",
+    "kernel_and_sampler_patches": "git apply --check passed against included iOS27 bases",
+    "python_and_json": "all new scripts parsed and JSON read successfully",
+    "saved_image_hashes": "portable boot runner --check passed; phone not contacted",
+    "artifact_audit": "staged files are text only; no OS images, firmware, calibration, raw logs or guest shaders"
   }
 }

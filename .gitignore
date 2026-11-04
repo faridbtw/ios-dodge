@@ -59,3 +59,10 @@ venv/
 *.spv
 /source/ios27/**/BUILD/
 /source/ios27/**/target/
+
+# Private iOS19 profiles and runtime captures remain local.
+*.local.json
+**/phone-*/
+**/receipts.json
+**/system-chunk.tmp
+/source/ios19/**/target/

@@ -1,0 +1,123 @@
+--- a/libkern/c++/OSKext.cpp
++++ b/libkern/c++/OSKext.cpp
+@@ -15715,6 +15715,15 @@
+ 		IOLockLock(sKextSummariesLock);
+ 	}
+ 
++	/* Statically linked RAM bring-up may have no loaded-kext table yet.
++	 * Preserve the caller's locking contract and report an empty kext list. */
++	if (gLoadedKextSummaries == NULL) {
++		if (kPrintKextsLock & flags) {
++			IOLockUnlock(sKextSummariesLock);
++		}
++		return;
++	}
++
+ 	for (uint32_t i = 0; i < gLoadedKextSummaries->numSummaries; ++i) {
+ 		OSKextLoadedKextSummary * summary;
+ 
+--- a/osfmk/ipc/ipc_policy.c
++++ b/osfmk/ipc/ipc_policy.c
+@@ -101,6 +101,13 @@
+ 
+ TUNABLE(bool, cv_notif_port_required_enforced, "cv_notif_port_required_enforced", false);
+ 
++/* Explicit bring-up compatibility for pre-26 iOS bootstrap clients only.
++ * Older libxpc clients use an ordinary reply receive right for bootstrap RPCs.
++ * Keep kobject/service validation and all other IPC policies unchanged.
++ */
++static TUNABLE(bool, solarium_bootstrap_reply_compat,
++    "solarium_bootstrap_reply_compat", false);
++
+ #pragma mark policy options
+ 
+ inline bool
+@@ -598,7 +605,12 @@
+ 		}
+ 	} else if (ip_is_bootstrap_port(dest_port)) {
+ 		/* bootstrap port defense */
+-		if (ipc_should_apply_policy(pol, IPC_POLICY_ENHANCED_V2) &&
++		struct proc_ro *pro = current_thread_ro()->tro_proc_ro;
++		uint32_t sdk_major = pro ? pro->p_platform_data.p_sdk >> 16 : 0;
++		bool old_ios_client = solarium_bootstrap_reply_compat && pro &&
++		    pro->p_platform_data.p_platform == PLATFORM_IOS &&
++		    sdk_major != 0 && sdk_major <= 19;
++		if (!old_ios_client && ipc_should_apply_policy(pol, IPC_POLICY_ENHANCED_V2) &&
+ 		    !ip_is_reply_port(reply_port) &&
+ 		    !ip_is_weak_reply_port(reply_port)) {
+ 			policy_violation = IPC_SEC_POLICY_REQUIRE_REPLY_PORT_SEMANTICS_BOOTSTRAP_PORT;
+--- a/osfmk/arm64/sleh.c
++++ b/osfmk/arm64/sleh.c
+@@ -806,20 +806,6 @@
+ #endif
+ 	bool is_user = PSR64_IS_USER(get_saved_state_cpsr(state));
+ 
+-	if (is_user && class != ESR_EC_SVC_64) {
+-		/* hakios: the first user-mode faults, on one line each, before they become signals */
+-		static uint32_t hk_user_faults;
+-		if (hk_user_faults++ < 16) {
+-			char line[200];
+-			uint64_t ia, ga;
+-			__asm__ volatile ("mrs %0, APIAKeyLo_EL1" : "=r" (ia));
+-			__asm__ volatile ("mrs %0, APGAKeyLo_EL1" : "=r" (ga));
+-			snprintf(line, sizeof(line), "hakios: user exception esr=0x%llx far=0x%lx pc=0x%llx lr=0x%llx sp=0x%llx iaLo=%llx\n",
+-			    esr, far, get_saved_state_pc(state), get_saved_state_lr(state), get_saved_state_sp(state), ia);
+-			loader_log_line(line);
+-			(void)ga;
+-		}
+-	}
+ 
+ #if CONFIG_SPTM
+ 	// Lockdown should only be initiated for kernel exceptions
+@@ -2168,6 +2154,21 @@
+ 		__builtin_unreachable();
+ 	}
+ #endif /* HAS_MTE */
++
++	/* Solarium bring-up: fatal user faults only; never log PAC keys. */
++	extern void proc_selfname(char *, int);
++	extern int proc_selfpid(void);
++	{
++		static unsigned int solarium_fatal_count;
++		if (solarium_fatal_count++ < 64) {
++			char name[32] = {0}, line[320];
++			proc_selfname(name, sizeof(name));
++			snprintf(line, sizeof(line), "solarium-fatal: process=%s pid=%d esr=0x%llx pc=0x%llx lr=0x%llx far=0x%llx code=%lld/%lld\n",
++			    name, proc_selfpid(), esr, get_saved_state_pc(state), get_saved_state_lr(state),
++			    (unsigned long long)fault_addr, (long long)codes[0], (long long)codes[1]);
++			loader_log_line(line);
++		}
++	}
+ 
+ 	exception_triage(exc, codes, numcodes);
+ 	__builtin_unreachable();
+--- a/iokit/Kernel/MiniIOMobileFramebuffer.cpp
++++ b/iokit/Kernel/MiniIOMobileFramebuffer.cpp
+@@ -87,6 +87,7 @@
+ #define SWAP_DEST(layer)        (0xc4 + 16 * (layer))   /* x, y, width, height on the display */
+ #define SWAP_LAYERS_SET         0x104                   /* bit per layer given in this swap */
+ #define SWAP_LAYERS_CLEARED     0x108
++#define SWAP19_SIZE             0x514                   /* iOS 19 Internal 23A191a: same shifted fields, shorter tail */
+ #define SWAP26_SIZE             0x588                   /* iOS 26's request ... */
+ #define SWAP26_SHIFT            0x48                    /* ... with these fields that much further on */
+ #define SWAP_LAYERS             4
+@@ -1635,13 +1636,17 @@
+ 			IOLog("MiniIOMobileFramebuffer: swap request of %u bytes, expected %u\n", args->structureInputSize, SWAP_SIZE);
+ 			return kIOReturnBadArgument;
+ 		}
+-		if (args->structureInputSize >= SWAP26_SIZE) {
++		if (args->structureInputSize == SWAP19_SIZE || args->structureInputSize >= SWAP26_SIZE) {
+ 			/*
+-			 * iOS 26's request (0x588 bytes) is iOS 16.5's with 0x48 bytes more ahead of the swap's own
++			 * iOS 19 Internal's 0x514-byte request and iOS 26's 0x588-byte request both have
++			 * the same 0x48-byte prefix ahead of iOS 16.5's swap fields. The captured iOS19
++			 * request has ID at 0x98, surface 0 at 0x9c, and source width/height at 0xb4/0xb8.
++			 * iOS 26's request is iOS 16.5's with 0x48 bytes more ahead of the swap's own
+ 			 * fields: the ID, the layers' surfaces, source rectangles, flags, destination rectangles and the
+ 			 * masks of the layers set and cleared all sit 0x48 further on (kern_SwapBegin/SwapSetLayer in
+ 			 * IOMobileFramebuffer.framework). Seen from there it is the old one.
+ 			 */
++			static_assert(SWAP26_SHIFT + SWAP_SIZE <= SWAP19_SIZE, "iOS19 swap translation bounds");
+ 			uint8_t old[SWAP_SIZE];
+ 
+ 			memcpy(old, (const uint8_t *) args->structureInput + SWAP26_SHIFT, SWAP_SIZE);

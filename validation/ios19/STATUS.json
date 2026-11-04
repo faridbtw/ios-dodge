@@ -1,0 +1,57 @@
+{
+  "updated": "2026-11-05",
+  "ios_version": "19.0 Internal",
+  "build": "23A191a",
+  "ram_only": true,
+  "phone_partition_writes": false,
+  "selected_local_snapshot": "verified-slider-v6",
+  "user_confirmed": [
+    "wake and touch",
+    "much smoother scrolling",
+    "wallpaper display and selection",
+    "battery indicator and battery/Dynamic Island positions",
+    "alert slider: bottom Ring, middle Silent, top Do Not Disturb"
+  ],
+  "measured": {
+    "frame_windows_fps": [
+      52,
+      59
+    ],
+    "frame_window_duration_seconds": 5,
+    "native_edr_start_us": 6292,
+    "native_iops_source_count": 1,
+    "dnd_take_and_release_succeeded": true,
+    "slider_positions": [
+      1,
+      2,
+      3,
+      2,
+      1
+    ]
+  },
+  "limitations": [
+    "status-bar clock still absent despite native enabled time producer",
+    "DSP raw SOC100 versus earlier Android90: accuracy/smoothing not validated",
+    "USB charging disconnect/reconnect not yet retested for this iOS19 profile",
+    "Home Screen Edit Customize icon colors can respring",
+    "Wi-Fi and audio disabled",
+    "most normal apps are absent or placeholders in the source image",
+    "60/120 FPS across apps not established",
+    "displayed iPhone15ProMax name UEFI booted; Settings name not separately confirmed"
+  ],
+  "excluded": [
+    "Apple images/caches and original archive",
+    "proprietary firmware and device calibration",
+    "compiled kernels/payloads/UEFI/helpers",
+    "raw logs/screenshots and guest AIR/shader captures"
+  ],
+  "validation_scope": "Targeted source patch checks and signed compatibility-helper builds; native phone tests plus user feedback. Full upstream CI was not run.",
+  "publication_checks": {
+    "compatibility_helpers": "rebuilt and dynamic helpers strictly signed/verified from committed paths",
+    "static_pid1_handoff": "compiled from included matching mini shim",
+    "kernel_and_sampler_patches": "git apply --check passed against included iOS27 bases",
+    "python_and_json": "all new scripts parsed and JSON read successfully",
+    "saved_image_hashes": "portable boot runner --check passed; phone not contacted",
+    "artifact_audit": "staged files are text only; no OS images, firmware, calibration, raw logs or guest shaders"
+  }
+}

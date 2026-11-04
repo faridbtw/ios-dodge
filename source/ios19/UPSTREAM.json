@@ -1,0 +1,27 @@
+{
+  "base_repo_commit": "e229632",
+  "kernel_base": "../ios27/xnu-xnu-12377.121.6",
+  "gpu_base": "../ios27/gpu/metal2vulkan",
+  "gpu_base_upstream_commit": "748a605b11dae76f021466d3bc94f87b1b7d67dc",
+  "local_sampler_commits": [
+    "3255d4d",
+    "fe84687",
+    "4b1e8ba"
+  ],
+  "source_system": "User-provided D84AP_23A191a_RootFS.tgz, not included",
+  "kernel_changed_files": [
+    "libkern/c++/OSKext.cpp",
+    "osfmk/ipc/ipc_policy.c",
+    "osfmk/arm64/sleh.c",
+    "iokit/Kernel/MiniIOMobileFramebuffer.cpp"
+  ],
+  "gpu_changed_files": [
+    "crates/metal2vulkan-air/src/intrinsics/families_tests.rs",
+    "crates/metal2vulkan-air/src/intrinsics/texture.rs",
+    "crates/metal2vulkan-validation/fixtures/public/engine/sampling_tail_legacy.ll",
+    "crates/metal2vulkan/src/cache/mod.rs",
+    "crates/metal2vulkan/src/tests/engine_sampler_tail.rs"
+  ],
+  "guest_shader_data_included": false,
+  "legacy_ll_fixture": "Authored regression fixture; not a captured guest shader"
+}

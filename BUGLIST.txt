@@ -1,164 +1,24 @@
-ios-dodge — OnePlus 13 iOS bug list
-Updated: 2026-10-30
+ios-dodge — iOS19 branch known issues
+Updated: 2026-11-05
 
-SELECTED BUILD
+Selected local snapshot: verified-slider-v6 (RAM only).
 
-UEFI: experimental/wifi/darwin-handoff-v25/project-boot-ios-uefi.img
-Payload: experimental/wifi/darwin-station-v14/payload.bin
-System RAM image: experimental/sileo/v1/system-sileo.apfs
-Original non-Sileo fallback: experimental/display/anti-tear-v1/payload.bin
-Renderer: Adreno 830 / Mesa 26.2.5 / OpenGL ES 3.2; Metal disabled.
-CPU layout: seven iOS cores, with physical CPU0 retained for firmware USB.
-The eight-core software-renderer build remains a fallback.
-These are local artifacts; the GitHub repository contains source and summaries.
+Confirmed: wake/touch, much smoother Metal UI, wallpaper display/selection,
+battery/Island placement, and alert slider Ring/Silent/Do Not Disturb.
 
-REMAINING BUGS / INCOMPLETE FEATURES
+OPEN
+- Status-bar clock is absent despite an enabled native time producer.
+- DSP raw SOC100 differed from an earlier Android UI90 reading; percentage
+  accuracy/smoothing is not validated. Do not claim an exact calibrated level.
+- Charging unplug/reconnect has not been retested for this iOS19 profile.
+- Home Screen > Edit > Customize (icon colors) can respring.
+- Wi-Fi and audio integration are disabled.
+- Most ordinary apps are only placeholders in the internal source image;
+  broad app compatibility is untested.
+- Two five-second frame windows reached52/59 presented FPS; sustained60/120FPS
+  across applications is not established.
+- The iPhone15ProMax display-name UEFI booted; Settings name not separately checked.
 
-DISPLAY-03 — Occasional app-switcher tearing
-Status: TEST CANDIDATE READY; work PAUSED until the user resumes tomorrow.
-User reports a small horizontal split when swiping away
-apps. General scrolling was previously confirmed tear-free. A guarded final
-copy candidate is saved; app-dismiss animation fix is not yet verified.
-User later reported power/volume failure in that candidate. Restoring the
-selected brightness build recovered all buttons (user confirmed). The
-experimental candidate remains unselected; cause is not yet established.
-
-WIFI-02 — Extended Wi-Fi validation
-Status: basic Wi-Fi works; longer validation remains.
-Scan/join, WPA2, DHCP IPv4, DNS and HTTPS succeeded on the tested WPA2 network. The user confirmed
-Settings off/on reconnection and Safari. Roaming, long idle, sustained throughput,
-other security modes and cold-boot credential retention remain unverified.
-
-AUDIO-01 — Speaker sound
-Status: OPEN; work PAUSED at the user's request.
-Local diagnostics verified AudioReach graph/clock setup, private DMA/SMMU
-mapping and DSP buffer completions. Amplifier start checks also succeeded.
-The user still heard no sound. Buffer completion does not prove audible
-output; the remaining routing/data-output problem is unresolved.
-Microphone and other audio routes are unverified. Unfinished diagnostic code
-and private firmware/logs remain local. Resume sound work only when the user asks.
-
-WALLPAPER-02 — Lock-screen wallpaper picker
-Status: OPEN; long-press entry deliberately DISABLED.
-Enabling the native lock-screen picker turns its hosted scene black. The
-working build keeps the guard and supports wallpaper changes through
-Settings > Wallpaper > Add New Wallpaper.
-Complete when: lock-screen selection/customization renders and applies changes.
-
-GPU-02 — Metal applications and rendering
-Status: INCOMPLETE; Metal is disabled in the selected profile.
-Verified Adreno acceleration covers the GLES/CoreAnimation path. It does not
-establish a working Metal driver or compatibility with Metal-only applications.
-The wallpaper preview helper avoids one specific Metal-only capture path.
-
-USB-02 — Native USB with all eight iOS cores
-Status: INCOMPLETE; seven-core firmware workaround is VERIFIED.
-The current profile provides fastboot diagnostics/logs and reboot, not an iOS
-SSH or filesystem shell. Native eight-core iOS USB access remains unfinished.
-
-PERF-01 / DISPLAY-01 — Frame pacing and smooth 120 FPS
-Status: UNVERIFIED / INCOMPLETE.
-Scrolling is user-confirmed usable and horizontal tearing is gone. The current
-framebuffer advertises 60 Hz; measured panel TE is approximately 120.6 Hz.
-Panel TE timing and final-copy duration do not establish application FPS.
-Application frame-time measurements, sustained load and thermal/power behavior
-still need validation. The user previously deprioritized 120 FPS.
-
-RESOLVED / VERIFIED IN THE SELECTED BUILD
-
-WIFI-01 — Native Peach Wi-Fi
-User confirmed network the tested WPA2 network appears and connects in Settings. Driver logs prove
-authentication, association, WPA2 key installation, IPv4, DNS and HTTPS status200.
-Native Peach UMAC wake is held after WMI unified-ready in addition to MHI wake;
-failed scans preserve the last successful Settings cache. Reconnection/Safari
-were user-confirmed. RAM-only Wi-Fi boot helper: tools/boot-op13-wifi.py.
-Evidence: diagnostics/20261030-wifi-macan/darwin25-umac-ready/RESULT.json.
-
-BRIGHTNESS-01 — Screen brightness
-User confirmed Settings and Control Center sliders visibly dim/brighten the
-panel. Native normal-range DCS51 commands use a root-only kernel interface
-and a system brightness helper. A scoped Control Center capability check
-enables its slider. No framebuffer dimming or GPU/rendering changes.
-Automatic ambient-light brightness remains unverified.
-Evidence: diagnostics/20261028-screen-brightness/control-v2/RESULT.json.
-
-FLASHLIGHT-01 — Control Center flashlight
-User confirmed visible on/off operation and brightness levels. Native PM8550/SPMI v7 support uses
-all four channels with the current observed in stock Android. Brightness is
-limited to the tested 30 mA per channel; automatic shutoff after 30 seconds is
-retained in this initial version. Longer operation remains unverified.
-Evidence: diagnostics/20261028-flashlight/STATUS.json.
-
-SILEO-01 — Rootless package manager
-Sileo2.5.1 is installed and the user confirmed it appears and opens. The
-writable Procursus prefix initializes in RAM; dpkg reports Sileo and ElleKit.
-Wi-Fi Internet access now works; package downloads and arbitrary
-tweaks remain separately unverified, and installed packages reset after a cold reboot.
-
-GPU-01 — Hardware GLES rendering
-CoreAnimation reports OpenGL ES 3.2 / Mesa 26.2.5 / Adreno 830. GPU context and
-scratch-command completion tests passed. Seven iOS CPUs joined the scheduler.
-Evidence: validation/gpu-gles/STATUS.json.
-
-DISPLAY-02 — Horizontal tearing after GPU enablement
-User confirmed the horizontal split is gone and scrolling remains usable.
-Frames compose in cached off-screen RAM, then copy after a physical TE edge.
-Thirteen saved commit samples fit the 8,290 us refresh period: copies took
-1,110–2,943 us, with no reported TE timeout. No panel-mode or display-register
-writes were needed. Longer-term display stability remains unverified.
-Evidence: validation/display/STATUS.json.
-
-WALLPAPER-01 — Blank Settings picker / preview crashes
-User confirmed wallpaper choices appear and changes apply through Settings.
-On-demand catalog services resolved catalog timeouts and Duet datavault errors.
-A scoped CoreGraphics capture replaces the verified Metal-only preview method.
-Four preview images were generated with no PosterBoard abort in the initial
-saved 60-second test. This does not fix WALLPAPER-02.
-Evidence: validation/wallpaper/STATUS.json.
-
-USB-01 / REBOOT-01 — Live diagnostics and reboot to Android
-Firmware USB access works in seven-core iOS. Physical cable reconnection was
-verified in the earlier USB profile; that transport implementation is retained.
-The v12 UEFI accepts fastboot reboot while iOS owns touch. Android startup
-completed in 22.7 seconds in the recorded test; later reboot requests also
-completed successfully. Older active-touch reboot rejection is resolved in v12.
-Evidence: validation/live-usb/STATUS.json and
-validation/uefi/live-reset/STATUS.json.
-
-OTHER WORKING FEATURES
-
-- iOS boot, touch, wallpaper display, icons and readable text.
-- Battery percentage, charging indication and live unplug/replug updates;
-  user-confirmed fully working.
-- Alert slider: bottom ring, middle silent, top Do Not Disturb; user-confirmed.
-- Centered turtle, larger full-screen logs and stable console scrolling.
-- All eight cores were exercised in the earlier software-renderer profile;
-  the selected GPU profile intentionally gives seven cores to iOS.
-
-NOT YET VALIDATED
-
-Camera, Bluetooth, cellular calls/data/SIM, GPS, microphone, complete sensor
-coverage, suspend/resume and sustained thermal/power behavior. These are not
-confirmed working and should not all be labeled confirmed broken.
-
-RAM-ONLY DESIGN
-
-Boot and staging use RAM. Persistent iOS state and installation/flashing are
-not implemented in this workflow; state loss on reboot is expected.
-Use fastboot boot and temporary staging; never flash or erase partitions.
-Cold-reset before reusing GPU-owned memory; do not use oem stop for that.
-
-EVIDENCE AND BUILD NOTES
-
-README.md; QUICKSTART.txt; SOURCE-PROVENANCE.md; STATUS.json.
-validation/gpu-gles/; validation/display/; validation/wallpaper/;
-validation/live-usb/; validation/uefi/live-reset/;
-validation/alert-slider/; validation/20261025-battery/;
-validation/20261028-source-checks.json.
-Raw diagnostics and private resume checkpoints stay in the local workspace.
-No system image, firmware, calibration, credentials or raw device logs are
-included in this bug list. Arch/Linux/Windows work remains outside this update.
-
-
-IOS 27.2 EXPERIMENTAL (2026-11-04)
-See validation/ios27/STATUS.json. Island alignment and battery placement confirmed; clock remains missing. Wallpaper draws but picker remains broken. Startup/animation black bands and blank widgets persist. Audio/Voice Memos unverified; freeze reported, shutdown panic captured separately. Wi-Fi disabled. No 60/120 FPS claim. iOS16 successes above do not imply these features work on iOS27.
+The unselected clock-layout-v2 experiment is not included as a working fix.
+Older iOS16/iOS27 feature claims do not establish support on iOS19.
+See source/ios19/README.md and validation/ios19/STATUS.json.

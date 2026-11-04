@@ -1,3 +1,7 @@
+# iOS19 branch additions
+
+The Solarium iOS19 source snapshot is documented in [source/ios19](source/ios19/README.md), with pinned bases in [UPSTREAM.json](source/ios19/UPSTREAM.json). Kernel and translator patches apply to the existing iOS27 source trees. Native helpers and the matching mini syscall shim preserve the tested OnePlus adaptations. The sampler regression is authored input; no captured guest shaders, Apple runtime images, firmware or calibration are added. All inherited source licenses remain in place.
+
 # Source and validation provenance
 
 This repository is a source snapshot of the working OnePlus 13 development bundle, prepared on 25 October 2026. It does not claim that one upstream commit reproduces the final image without the port changes and omitted local inputs.
