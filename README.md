@@ -3,7 +3,7 @@
 </p>
 
 <p align="center">
-  <strong>OnePlus 13</strong> &nbsp; / &nbsp; <strong>iOS 16.5 · 20F66</strong> &nbsp; / &nbsp; <strong>RAM boot</strong>
+  <strong>OnePlus 13</strong> &nbsp; / &nbsp; <strong>iOS 16.5 · 20F66</strong>
 </p>
 
 <p align="center">
