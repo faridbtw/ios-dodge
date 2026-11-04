@@ -44,8 +44,6 @@
         <text x="264.5" y="20" text-anchor="middle" fill="#ffaaaa">iOS 27.2</text>
         <rect x="324" width="109" height="31" rx="8" fill="#1d1418" stroke="#423036"/>
         <text x="378.5" y="20" text-anchor="middle" fill="#d3c0c3">SM8750</text>
-        <rect x="444" width="119" height="31" rx="8" fill="#1d1418" stroke="#423036"/>
-        <text x="503.5" y="20" text-anchor="middle" fill="#d3c0c3">GLES 3.2</text>
       </g>
     </g>
     <!-- Vector interpretation of the project's existing turtle boot artwork. -->
