@@ -1,6 +1,6 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="1120" height="360" viewBox="0 0 1120 360" role="img" aria-labelledby="title desc">
   <title id="title">ios-dodge</title>
-  <desc id="desc">An experimental iOS port for OnePlus 13. A white turtle on a dark background with red accents.</desc>
+  <desc id="desc">iOS 16.5, iOS 19.0 and iOS 27.2 on OnePlus 13. A white turtle on a dark background with red accents.</desc>
   <defs>
     <linearGradient id="background" x2="1" y2="1">
       <stop stop-color="#160e12"/>
@@ -38,10 +38,14 @@
       <g transform="translate(54 276)" font-size="12" font-weight="600">
         <rect width="97" height="31" rx="8" fill="#29161a" stroke="#593036"/>
         <text x="48.5" y="20" text-anchor="middle" fill="#ffaaaa">iOS 16.5</text>
-        <rect x="108" width="109" height="31" rx="8" fill="#1d1418" stroke="#423036"/>
-        <text x="162.5" y="20" text-anchor="middle" fill="#d3c0c3">SM8750</text>
-        <rect x="228" width="119" height="31" rx="8" fill="#1d1418" stroke="#423036"/>
-        <text x="287.5" y="20" text-anchor="middle" fill="#d3c0c3">GLES 3.2</text>
+        <rect x="108" width="97" height="31" rx="8" fill="#29161a" stroke="#593036"/>
+        <text x="156.5" y="20" text-anchor="middle" fill="#ffaaaa">iOS 19.0</text>
+        <rect x="216" width="97" height="31" rx="8" fill="#29161a" stroke="#593036"/>
+        <text x="264.5" y="20" text-anchor="middle" fill="#ffaaaa">iOS 27.2</text>
+        <rect x="324" width="109" height="31" rx="8" fill="#1d1418" stroke="#423036"/>
+        <text x="378.5" y="20" text-anchor="middle" fill="#d3c0c3">SM8750</text>
+        <rect x="444" width="119" height="31" rx="8" fill="#1d1418" stroke="#423036"/>
+        <text x="503.5" y="20" text-anchor="middle" fill="#d3c0c3">GLES 3.2</text>
       </g>
     </g>
     <!-- Vector interpretation of the project's existing turtle boot artwork. -->
