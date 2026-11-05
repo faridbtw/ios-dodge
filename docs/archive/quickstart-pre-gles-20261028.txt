@@ -1,3 +1,6 @@
+ARCHIVED REFERENCE — use the current project-root QUICKSTART.txt.
+Commands below refer to the original project root and historical local inputs.
+
 OnePlus 13: current iOS RAM boot quickstart
 ==========================================
 

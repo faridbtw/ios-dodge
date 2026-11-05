@@ -7,7 +7,8 @@ venv/
 .env.*
 /build/
 /updates/
-/experimental/
+/experimental/*
+!/experimental/README.md
 /system.apfs
 *.apfs
 *.ipsw
@@ -66,3 +67,6 @@ venv/
 **/receipts.json
 **/system-chunk.tmp
 /source/ios19/**/target/
+
+# Folder navigation pages are source documentation, not local captures.
+!/diagnostics/README.md

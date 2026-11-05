@@ -30,6 +30,18 @@ The **iOS19** branch preserves the Solarium bring-up for OnePlus 13 (`dodge`, SM
 
 The status-bar clock remains absent. DSP raw SOC was 100% versus an earlier Android UI reading of 90%; percentage accuracy and this profile's unplug/reconnect charging transitions need further validation. Icon-color customization can respring. Wi-Fi and audio integration are disabled; ordinary app availability is limited by the internal source image. Neither universal 60/120 FPS nor broad app compatibility is established.
 
+## Repository layout
+
+| Folder | What you’ll find |
+| :--- | :--- |
+| [Source](source/) | Kernel, UEFI, graphics and native platform adaptations. |
+| [Tools](tools/) | Build, packaging, boot and regression helpers. |
+| [Validation](validation/) | Results scoped to each tested build. |
+| [Documentation](docs/) | Guides, source credits and archived instructions. |
+| [Assets](assets/) | Banner and boot artwork. |
+| [Hardware references](diagnostics/) | Vendor protocol source references. |
+| [Integration helpers](experimental/) | Source scripts for staged bring-up. |
+
 ## Sources and booting
 
 Start with [source/ios19](source/ios19/README.md). It contains kernel and sampler patches against the preserved iOS27 bases, the exact tested native compatibility sources, a helper build script and a profile-driven RAM boot runner. [QUICKSTART.txt](QUICKSTART.txt) distinguishes source-checkout commands from the owner's prepared local iOS16/27/19 workspaces.
