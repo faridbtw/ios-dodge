@@ -92,21 +92,17 @@ fastboot -s xnuloader reboot
 
 Cold-reset before another GPU session. The GPU retains protected memory; do not reuse the session through `oem stop`. Firmware USB provides diagnostics and reboot, rather than an iOS SSH or filesystem shell. Sileo packages and settings in this RAM profile reset after a cold reboot.
 
-## Explore the source
+## Repository layout
 
-| Directory | Contents |
+| Folder | What you’ll find |
 | :--- | :--- |
-| [Kernel](source/xnu-build-snapshot/xnu-8796.121.2/) | XNU, Adreno service, battery, slider, flashlight and display adaptations. |
-| [UEFI](source/touch-runtime-v15/) | Console, USB reconnect, live reset and panel brightness preparation. |
-| [Userland](source/hackios-xnu-userland/) | Injected UI libraries and the GLES / OSMesa bridge. |
-| [Mesa](source/mesa26-op13/) | Consolidated Mesa 26.2.5 patch and changed-file hash manifest. |
-| [Brightness](source/screen-brightness/) | Screen agent, scoped Control Center hook, DSI tests and feature build guide. |
-| [Wallpaper preview](source/wallpaper-preview/) | Scoped CoreGraphics preview helper. |
-| [Wi-Fi](source/wifi-peach/WORKING.md) | Native Peach PCIe/MHI/QRTR transport, ath12k station stack, wake handshake and validation. |
-| [Tools](tools/) | Build, packaging, temporary boot and regression checks. |
-| [Validation](validation/) | Sanitized test results and artifact identities. |
-
-The active kernel builds from its ordinary source paths. Historical `files/` overlays remain for provenance.
+| [Source](source/) | Kernel, UEFI, graphics and native platform adaptations. |
+| [Tools](tools/) | Build, packaging, boot and regression helpers. |
+| [Validation](validation/) | Results scoped to each tested build. |
+| [Documentation](docs/) | Guides, source credits and archived instructions. |
+| [Assets](assets/) | Banner and boot artwork. |
+| [Hardware references](diagnostics/) | Vendor protocol source references. |
+| [Integration helpers](experimental/) | Source scripts for staged bring-up. |
 
 ## Development
 
@@ -158,12 +154,8 @@ Latest source checks: [30 October 2026](validation/20261030-source-checks.json).
 
 </details>
 
-## Credits
+## Sources and licenses
 
-Built on **HackiOS / OOSEX GANG**, **Apple XNU**, **Project-Silicium**, **Mesa / Freedreno**, and **Qualcomm / OnePlus** platform work.
-
-- GPU / GLES sources: [iola1999 kernel](https://github.com/iola1999/hackios-xnu-kernel/tree/k90-port) and [userland](https://github.com/iola1999/hackios-xnu-userland/tree/k90-port), recovered from the supplied OnePlus 13 GLES v3 archive.
-- Battery and Wi-Fi station-stack reference: [ios-macan](https://github.com/hxfuxyy/ios-macan).
-- Slider and Focus behavior: [haxi0's OnePlus 8 kernel](https://github.com/haxi0/iphont-xnu-kernel/tree/instantnoodle) and [userland](https://github.com/haxi0/iphont-xnu-userland), adapted to Dodge's AK09970 hardware.
-
-Original notices and third-party licenses retain their scope. See [LICENSE](LICENSE) and [SOURCE-PROVENANCE.md](SOURCE-PROVENANCE.md) for attribution and integration boundaries.
+Original copyright and license notices remain with each component. Source
+origins, contributor credits and revision details are recorded in
+[SOURCE-PROVENANCE.md](SOURCE-PROVENANCE.md).

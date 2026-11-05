@@ -98,7 +98,7 @@ The previous working payload remains:
 /opt/homebrew/bin/python3 tools/boot-op13-play.py --serial YOUR_SERIAL --payload experimental/slider/live-original-compositor-v1/payload.bin --output diagnostics/ios-software-next
 
 This fallback uses eight cores and gl=0; it lacks live USB access during iOS.
-Its complete earlier instructions are in QUICKSTART.pre-gles-20261028.txt.
+Its complete earlier instructions are in docs/archive/quickstart-pre-gles-20261028.txt.
 Sound remains paused at SOUND-RESUME.txt. Wi-Fi evidence and remaining checks:
 source/wifi-peach/WORKING.md. Previous brightness-only payload/helper remain
 available as the no-Wi-Fi fallback.

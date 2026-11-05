@@ -7,7 +7,8 @@ venv/
 .env.*
 /build/
 /updates/
-/experimental/
+/experimental/*
+!/experimental/README.md
 /system.apfs
 *.apfs
 *.ipsw
@@ -49,3 +50,6 @@ venv/
 /source/wifi-peach/darwin-ath12k-v2/out/
 *.dSYM/
 *.err
+
+# Folder navigation pages are source documentation, not local captures.
+!/diagnostics/README.md
