@@ -1,3 +1,7 @@
+Source build tutorial: docs/BUILDING.md
+UEFI/firmware/calibration and generated boot images stay local.
+The prepared boot-kit upload has been removed.
+
 iOS19 branch — source checkout notes
 ===================================
 

@@ -12,7 +12,7 @@ import shutil
 import subprocess
 import sys
 
-ROOT = Path('/Users/faridbtw/Documents/Porting/OnePlus13-iOS-RAM')
+ROOT = Path(__file__).resolve().parents[3]
 SOURCE = ROOT / 'source/xnu-build-snapshot/xnu-8796.121.2'
 SUPPORT = ROOT / 'source/hackios-xnu-kernel/xnu-deps'
 WORK = ROOT / 'build/mac-xnu'

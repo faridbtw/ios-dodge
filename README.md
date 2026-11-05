@@ -14,6 +14,8 @@ The **iOS19** branch preserves the Solarium bring-up for OnePlus 13 (`dodge`, SM
 
 **RAM only:** use `fastboot boot` and temporary staging. The repository remains source-only: system images, SDKs, firmware, device calibration and raw logs stay local. The iOS16 and iOS27 branches remain separate.
 
+[Build locally from source](docs/BUILDING.md) — requirements, per-version recipes and the remaining local packaging steps. UEFI, payloads, system images, firmware and calibration are not distributed.
+
 ## Current status
 
 | Feature | iOS 19 result |
