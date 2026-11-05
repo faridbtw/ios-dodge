@@ -42,10 +42,8 @@ Status reflects the selected Wi-Fi build, validated **30 October 2026**. Detaile
 
 | Area | Current state |
 | :--- | :--- |
-| **Wi-Fi extended tests** | Roaming, long idle, sustained throughput and other security modes remain unverified. |
 | **Sound** | Speaker output is unresolved; work is paused. |
 | **Metal & 120 FPS** | Metal is disabled. Application rendering at 120 FPS is unverified; FPS work is stopped. |
-| **Display polish** | Scrolling is mostly tear-free. An occasional small split when dismissing apps remains a minor issue. |
 | **Long-term stability** | Sustained load, broader sensors/cameras/radios and arbitrary tweak compatibility need validation. |
 
 The experimental tearing candidate is **not selected**. The saved brightness build restored working buttons. See [BUGLIST.txt](BUGLIST.txt) for the full record.
