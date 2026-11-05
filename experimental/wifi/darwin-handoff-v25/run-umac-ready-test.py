@@ -21,7 +21,7 @@ root = Path(__file__).resolve().parents[3]
 exp = Path(__file__).resolve().parent
 build = root / 'experimental/wifi/darwin-station-v14'
 meta = json.loads((build / 'BUILD.json').read_text())
-loader = exp / 'project-boot-ios-uefi.img'
+loader = exp / 'dodge-ios-uefi.img'
 payload = build / 'payload.bin'
 system = root / 'experimental/sileo/v1/system-sileo.apfs'
 def digest(path):

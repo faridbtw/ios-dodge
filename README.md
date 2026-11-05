@@ -48,7 +48,7 @@ A prepared local workspace is required. The selected matching files are:
 
 | Local artifact | Path inside the original workspace |
 | :--- | :--- |
-| UEFI | `experimental/ios27/v2/project-boot-ios27.img` |
+| UEFI | `experimental/ios27/v2/dodge-ios-uefi.img` |
 | Payload | `experimental/ios27/v2/status-layout-v4/payload.bin` |
 | Boot RAM image | `experimental/ios27/v2/status-layout-v4/boot.apfs` |
 | System RAM image | `experimental/ios27/v2/system-registration-test.apfs` |
