@@ -2,7 +2,9 @@
   <img src="assets/readme/banner.svg" width="1120" alt="ios-dodge — OnePlus 13 iOS port">
 </p>
 
-<p align="center"><strong>OnePlus 13</strong> · <strong>iOS 19.0 Internal / 23A191a</strong></p>
+<p align="center">
+  <strong>OnePlus 13</strong> &nbsp; / &nbsp; <strong>iOS 19.0 · 23A191a</strong>
+</p>
 
 <p align="center"><a href="QUICKSTART.txt">Quick start</a> · <a href="source/ios19/README.md">Source & build notes</a> · <a href="BUGLIST.txt">Known issues</a> · <a href="validation/ios19/STATUS.json">Validation</a></p>
 
