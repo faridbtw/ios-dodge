@@ -7,7 +7,8 @@ venv/
 .env.*
 /build/
 /updates/
-/experimental/
+/experimental/*
+!/experimental/README.md
 /system.apfs
 *.apfs
 *.ipsw
@@ -59,3 +60,6 @@ venv/
 *.spv
 /source/ios27/**/BUILD/
 /source/ios27/**/target/
+
+# Folder navigation pages are source documentation, not local captures.
+!/diagnostics/README.md

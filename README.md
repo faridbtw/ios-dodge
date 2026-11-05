@@ -63,6 +63,18 @@ That runner uses the matching local preflight profile, boots UEFI with `fastboot
 
 [QUICKSTART.txt](QUICKSTART.txt) covers boot/recovery. [Source and build notes](source/ios27/README.md) describe the required local inputs and source layout. This is a source snapshot rather than a complete one-command image builder.
 
+## Repository layout
+
+| Folder | What you’ll find |
+| :--- | :--- |
+| [Source](source/) | Kernel, UEFI, graphics and native platform adaptations. |
+| [Tools](tools/) | Build, packaging, boot and regression helpers. |
+| [Validation](validation/) | Results scoped to each tested build. |
+| [Documentation](docs/) | Guides, source credits and archived instructions. |
+| [Assets](assets/) | Banner and boot artwork. |
+| [Hardware references](diagnostics/) | Vendor protocol source references. |
+| [Integration helpers](experimental/) | Source scripts for staged bring-up. |
+
 ## Branches and sources
 
 - [iOS16](https://github.com/faridbtw/ios-dodge/tree/iOS16): iOS16.5 baseline and its own feature status.
