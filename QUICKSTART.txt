@@ -2,7 +2,7 @@ OnePlus 13: current iOS RAM boot quickstart
 ==========================================
 
 Current iOS UEFI: Project Boot (Boot iOS and Return to Android menu):
-  experimental/wifi/darwin-handoff-v25/project-boot-ios-uefi.img
+  experimental/wifi/darwin-handoff-v25/dodge-ios-uefi.img
 
 Current Wi-Fi + GPU + wallpaper + display + Sileo + flashlight + brightness payload (Wi-Fi verified 2026-10-30):
   experimental/wifi/darwin-station-v14/payload.bin
@@ -141,3 +141,17 @@ Source-only checkout: recreate the local payload with
 Boot images, system.apfs, calibration and raw logs are not included in Git.
 
 Current status summary: STATUS.json. Remaining issues: BUGLIST.txt.
+
+Laptop boot folder
+------------------
+The owner's organized local boot files are in:
+  ~/Documents/Porting/iOS-Boots/
+
+Choose iOS16, iOS19 or iOS27. Each folder contains dodge-ios-uefi.img and
+Boot-iOS.command, with shortcuts to its matching payload/system/workspace.
+Start Android, authorize USB debugging and connect USB before opening the
+launcher. Keep USB connected until upload/startup finish. These are local
+files; the images and private profiles are not included in GitHub.
+
+The UEFI filename is dodge-ios-uefi.img for every iOS version; use the
+correct version folder. The Windows/Linux UEFI is named dodge-uefi.img.

@@ -3,7 +3,7 @@ Updated: 2026-10-30
 
 SELECTED BUILD
 
-UEFI: experimental/wifi/darwin-handoff-v25/project-boot-ios-uefi.img
+UEFI: experimental/wifi/darwin-handoff-v25/dodge-ios-uefi.img
 Payload: experimental/wifi/darwin-station-v14/payload.bin
 System RAM image: experimental/sileo/v1/system-sileo.apfs
 Original non-Sileo fallback: experimental/display/anti-tear-v1/payload.bin

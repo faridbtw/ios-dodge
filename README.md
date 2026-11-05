@@ -58,7 +58,7 @@ Supply your own compatible system image, SDK, firmware and matching boot templat
 
 | Selected local artifact | Path |
 | :--- | :--- |
-| iOS UEFI | `experimental/wifi/darwin-handoff-v25/project-boot-ios-uefi.img` |
+| iOS UEFI | `experimental/wifi/darwin-handoff-v25/dodge-ios-uefi.img` |
 | iOS payload | `experimental/wifi/darwin-station-v14/payload.bin` |
 | System RAM image | `experimental/sileo/v1/system-sileo.apfs` |
 

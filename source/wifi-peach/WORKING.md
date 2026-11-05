@@ -32,7 +32,7 @@ RAM-only network settings may need to be entered again after a cold boot.
 
 | Artifact | Path | SHA-256 |
 |---|---|---|
-| Project Boot UEFI | `experimental/wifi/darwin-handoff-v25/project-boot-ios-uefi.img` | `2ee6c2a0def66dcb9ebe7a33268d3a1372202f1501de7219083fb647ab760955` |
+| Project Boot UEFI | `experimental/wifi/darwin-handoff-v25/dodge-ios-uefi.img` | `2ee6c2a0def66dcb9ebe7a33268d3a1372202f1501de7219083fb647ab760955` |
 | iOS payload | `experimental/wifi/darwin-station-v14/payload.bin` | `a876182c4edc815d706d76d7aa2a321b3913c52ba36e33d0aac1daf7d3d0f42f` |
 | Kernel | Published source: `source/xnu-build-snapshot/xnu-8796.121.2` | `ca2cb1f8c057ceba910d0ae1b8f01f1270746380cfcf1931fa2c08f7de132147` |
 | Matching local system | `experimental/sileo/v1/system-sileo.apfs` | `ece8098938ebbc265c8c782bf705cf2f74747deea002ec3a5548cb4307909ed3` |
