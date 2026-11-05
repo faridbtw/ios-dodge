@@ -20,6 +20,8 @@ Experimental **iOS 27.2 / 24B119** bring-up for **OnePlus 13 (`dodge`, SM8750)**
 
 > **RAM only.** Use `fastboot boot` and temporary staging. Never flash or erase phone partitions. System images, firmware, SDKs, device calibration and raw logs stay local.
 
+[Build locally from source](docs/BUILDING.md) — requirements, per-version recipes and the remaining local packaging steps. UEFI, payloads, system images, firmware and calibration are not distributed.
+
 ## Feature status
 
 This table describes the selected **iOS 27.2 `status-layout-v4` profile**, using its verified battery kernel. It is based on [iOS27 validation](validation/ios27/STATUS.json), not the iOS16 feature set.
