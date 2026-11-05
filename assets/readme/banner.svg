@@ -36,12 +36,12 @@
       <text x="54" y="204" font-size="23" letter-spacing="-.3" fill="#d0bfc0">iOS on OnePlus 13.</text>
       <text x="54" y="235" font-size="15" fill="#ab8e90">XNU · Adreno 830 · UEFI</text>
       <g transform="translate(54 276)" font-size="12" font-weight="600">
-        <rect width="97" height="31" rx="8" fill="#29161a" stroke="#593036"/>
-        <text x="48.5" y="20" text-anchor="middle" fill="#ffaaaa">iOS 16.5</text>
+        <rect width="97" height="31" rx="8" fill="#112a1d" stroke="#286442"/>
+        <text x="48.5" y="20" text-anchor="middle" fill="#86efac">iOS 16.5</text>
         <rect x="108" width="97" height="31" rx="8" fill="#29161a" stroke="#593036"/>
         <text x="156.5" y="20" text-anchor="middle" fill="#ffaaaa">iOS 19.0</text>
-        <rect x="216" width="97" height="31" rx="8" fill="#29161a" stroke="#593036"/>
-        <text x="264.5" y="20" text-anchor="middle" fill="#ffaaaa">iOS 27.2</text>
+        <rect x="216" width="97" height="31" rx="8" fill="#30260e" stroke="#786020"/>
+        <text x="264.5" y="20" text-anchor="middle" fill="#fde047">iOS 27.2</text>
         <rect x="324" width="109" height="31" rx="8" fill="#1d1418" stroke="#423036"/>
         <text x="378.5" y="20" text-anchor="middle" fill="#d3c0c3">SM8750</text>
       </g>
