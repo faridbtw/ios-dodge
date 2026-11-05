@@ -45,17 +45,17 @@ def main():
     assert 'op13_audio' not in args and 'sm8750_test_reset_seconds' not in args
     assert len(entries['cmdline']) <= 416
     loader = ROOT / meta['loader']
-    project_boot_loader = ROOT / 'experimental/uefi-menu/project-boot-v24/project-boot-ios-uefi.img'
+    project_boot_loader = ROOT / 'experimental/uefi-menu/project-boot-v24/dodge-ios-uefi.img'
     pinned_loaders = {
         project_boot_loader: '2039c1e51d8a35cf30c771c4985ea30c4ee8103bc9ed0dcbaf0a9d58b5eee6ab',
-        ROOT / 'experimental/uefi-menu/project-boot-v23/project-boot-ios-uefi.img': 'f4cf919c432155494b9651006118b0a38bb8a3749f2c8ea43527ccba28ed385f',
-        ROOT / 'experimental/uefi-menu/project-boot-v22/project-boot-ios-uefi.img': '5dfb3be4b081c8a5a94ea3f4be5fed5afdc4212fb01fbf24632096691cca1584',
-        ROOT / 'experimental/uefi-menu/project-boot-v21/project-boot-ios-uefi.img': '50d94ffe071f15071ce683b9d95a592a2d45dbdb56d4f4bc66ef2ff6e59e27d6',
-        ROOT / 'experimental/uefi-menu/project-boot-v20/project-boot-ios-uefi.img': '44161a987a8a7576f5ad4ad74e1ec1f4206d0d9c8eed6c98ccd6e963b75c0a33',
-        ROOT / 'experimental/uefi-menu/project-boot-v19/project-boot-ios-uefi.img': '49130b3bd1326eb2b87beec4674370c0658deaf50ae92c5460db04820f6cfc12',
-        ROOT / 'experimental/uefi-menu/project-boot-v18/project-boot-ios-uefi.img': '68a8050e97e55abb938dc3569c48ab12c4619fca2f11c81b768b7d223e692626',
-        ROOT / 'experimental/uefi-menu/project-boot-v17/project-boot-ios-uefi.img': '7a8d69b687e6423080b355869bc6b6519480d7e7d59571011ad34f0f0cddba50',
-        ROOT / 'experimental/uefi-menu/project-boot-v16/project-boot-ios-uefi.img': '7c04cb6e028cf03d2743975d11b03f5de096d01f63b54c553f202eaaa714b814',
+        ROOT / 'experimental/uefi-menu/project-boot-v23/dodge-ios-uefi.img': 'f4cf919c432155494b9651006118b0a38bb8a3749f2c8ea43527ccba28ed385f',
+        ROOT / 'experimental/uefi-menu/project-boot-v22/dodge-ios-uefi.img': '5dfb3be4b081c8a5a94ea3f4be5fed5afdc4212fb01fbf24632096691cca1584',
+        ROOT / 'experimental/uefi-menu/project-boot-v21/dodge-ios-uefi.img': '50d94ffe071f15071ce683b9d95a592a2d45dbdb56d4f4bc66ef2ff6e59e27d6',
+        ROOT / 'experimental/uefi-menu/project-boot-v20/dodge-ios-uefi.img': '44161a987a8a7576f5ad4ad74e1ec1f4206d0d9c8eed6c98ccd6e963b75c0a33',
+        ROOT / 'experimental/uefi-menu/project-boot-v19/dodge-ios-uefi.img': '49130b3bd1326eb2b87beec4674370c0658deaf50ae92c5460db04820f6cfc12',
+        ROOT / 'experimental/uefi-menu/project-boot-v18/dodge-ios-uefi.img': '68a8050e97e55abb938dc3569c48ab12c4619fca2f11c81b768b7d223e692626',
+        ROOT / 'experimental/uefi-menu/project-boot-v17/dodge-ios-uefi.img': '7a8d69b687e6423080b355869bc6b6519480d7e7d59571011ad34f0f0cddba50',
+        ROOT / 'experimental/uefi-menu/project-boot-v16/dodge-ios-uefi.img': '7c04cb6e028cf03d2743975d11b03f5de096d01f63b54c553f202eaaa714b814',
         ROOT / 'experimental/uefi-menu/ios-v15/dodge-ios-uefi.img':
             'e3eae832a70b71b44e3bc17d610e568ce7e331b03bb56ff3e18678d7beaf0f93',
         ROOT / 'experimental/uefi-menu/android-v14/dodge-ios-uefi.img':
@@ -74,10 +74,10 @@ def main():
         assert digest(loader) == pinned_loaders[loader]
     screen_bridge = meta.get('screen_brightness_requested', False)
     if screen_bridge:
-        assert loader in (project_boot_loader, ROOT / 'experimental/uefi-menu/project-boot-v23/project-boot-ios-uefi.img', ROOT / 'experimental/uefi-menu/project-boot-v22/project-boot-ios-uefi.img', ROOT / 'experimental/uefi-menu/project-boot-v21/project-boot-ios-uefi.img', ROOT / 'experimental/uefi-menu/project-boot-v20/project-boot-ios-uefi.img', ROOT / 'experimental/uefi-menu/project-boot-v19/project-boot-ios-uefi.img', ROOT / 'experimental/uefi-menu/project-boot-v18/project-boot-ios-uefi.img', ROOT / 'experimental/uefi-menu/project-boot-v17/project-boot-ios-uefi.img', ROOT / 'experimental/uefi-menu/project-boot-v16/project-boot-ios-uefi.img', ROOT / 'experimental/uefi-turtle/screen-brightness-v13/dodge-ios-uefi.img',
+        assert loader in (project_boot_loader, ROOT / 'experimental/uefi-menu/project-boot-v23/dodge-ios-uefi.img', ROOT / 'experimental/uefi-menu/project-boot-v22/dodge-ios-uefi.img', ROOT / 'experimental/uefi-menu/project-boot-v21/dodge-ios-uefi.img', ROOT / 'experimental/uefi-menu/project-boot-v20/dodge-ios-uefi.img', ROOT / 'experimental/uefi-menu/project-boot-v19/dodge-ios-uefi.img', ROOT / 'experimental/uefi-menu/project-boot-v18/dodge-ios-uefi.img', ROOT / 'experimental/uefi-menu/project-boot-v17/dodge-ios-uefi.img', ROOT / 'experimental/uefi-menu/project-boot-v16/dodge-ios-uefi.img', ROOT / 'experimental/uefi-turtle/screen-brightness-v13/dodge-ios-uefi.img',
                           ROOT / 'experimental/uefi-menu/android-v14/dodge-ios-uefi.img',
                           ROOT / 'experimental/uefi-menu/ios-v15/dodge-ios-uefi.img')
-    if loader in (project_boot_loader, ROOT / 'experimental/uefi-menu/project-boot-v23/project-boot-ios-uefi.img', ROOT / 'experimental/uefi-menu/project-boot-v22/project-boot-ios-uefi.img', ROOT / 'experimental/uefi-menu/project-boot-v21/project-boot-ios-uefi.img', ROOT / 'experimental/uefi-menu/project-boot-v20/project-boot-ios-uefi.img', ROOT / 'experimental/uefi-menu/project-boot-v19/project-boot-ios-uefi.img', ROOT / 'experimental/uefi-menu/project-boot-v18/project-boot-ios-uefi.img', ROOT / 'experimental/uefi-menu/project-boot-v17/project-boot-ios-uefi.img', ROOT / 'experimental/uefi-menu/project-boot-v16/project-boot-ios-uefi.img', ROOT / 'experimental/uefi-menu/ios-v15/dodge-ios-uefi.img',
+    if loader in (project_boot_loader, ROOT / 'experimental/uefi-menu/project-boot-v23/dodge-ios-uefi.img', ROOT / 'experimental/uefi-menu/project-boot-v22/dodge-ios-uefi.img', ROOT / 'experimental/uefi-menu/project-boot-v21/dodge-ios-uefi.img', ROOT / 'experimental/uefi-menu/project-boot-v20/dodge-ios-uefi.img', ROOT / 'experimental/uefi-menu/project-boot-v19/dodge-ios-uefi.img', ROOT / 'experimental/uefi-menu/project-boot-v18/dodge-ios-uefi.img', ROOT / 'experimental/uefi-menu/project-boot-v17/dodge-ios-uefi.img', ROOT / 'experimental/uefi-menu/project-boot-v16/dodge-ios-uefi.img', ROOT / 'experimental/uefi-menu/ios-v15/dodge-ios-uefi.img',
                   ROOT / 'experimental/uefi-menu/android-v14/dodge-ios-uefi.img',
                   ROOT / 'experimental/uefi-turtle/live-reset-v12/dodge-ios-uefi.img',
                   ROOT / 'experimental/uefi-turtle/screen-brightness-v13/dodge-ios-uefi.img'):
@@ -93,7 +93,7 @@ def main():
                                                   'ramdisk_and_signature_bytes_unchanged'))
         assert first['other_ffs_unchanged'] and final['other_inner_ffs_unchanged']
     if a.menu:
-        assert loader in (project_boot_loader, ROOT / 'experimental/uefi-menu/project-boot-v23/project-boot-ios-uefi.img', ROOT / 'experimental/uefi-menu/project-boot-v22/project-boot-ios-uefi.img', ROOT / 'experimental/uefi-menu/project-boot-v21/project-boot-ios-uefi.img', ROOT / 'experimental/uefi-menu/project-boot-v20/project-boot-ios-uefi.img', ROOT / 'experimental/uefi-menu/project-boot-v19/project-boot-ios-uefi.img', ROOT / 'experimental/uefi-menu/project-boot-v18/project-boot-ios-uefi.img', ROOT / 'experimental/uefi-menu/project-boot-v17/project-boot-ios-uefi.img', ROOT / 'experimental/uefi-menu/project-boot-v16/project-boot-ios-uefi.img', ROOT / 'experimental/uefi-menu/ios-v15/dodge-ios-uefi.img'), '--menu requires the iOS button UEFI'
+        assert loader in (project_boot_loader, ROOT / 'experimental/uefi-menu/project-boot-v23/dodge-ios-uefi.img', ROOT / 'experimental/uefi-menu/project-boot-v22/dodge-ios-uefi.img', ROOT / 'experimental/uefi-menu/project-boot-v21/dodge-ios-uefi.img', ROOT / 'experimental/uefi-menu/project-boot-v20/dodge-ios-uefi.img', ROOT / 'experimental/uefi-menu/project-boot-v19/dodge-ios-uefi.img', ROOT / 'experimental/uefi-menu/project-boot-v18/dodge-ios-uefi.img', ROOT / 'experimental/uefi-menu/project-boot-v17/dodge-ios-uefi.img', ROOT / 'experimental/uefi-menu/project-boot-v16/dodge-ios-uefi.img', ROOT / 'experimental/uefi-menu/ios-v15/dodge-ios-uefi.img'), '--menu requires the iOS button UEFI'
     system = a.system.resolve() if a.system else ROOT / 'system.apfs'
     assert digest(system) == meta['system_sha256']
     if a.check:

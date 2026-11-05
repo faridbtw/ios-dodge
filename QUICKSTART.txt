@@ -59,7 +59,7 @@ Add --menu to upload and wait for the Boot iOS button. Without it, the host
 starts iOS automatically. Use a new diagnostics output directory every time.
 
 Matching local files selected by the helper:
-  UEFI:    experimental/wifi/darwin-handoff-v25/project-boot-ios-uefi.img
+  UEFI:    experimental/wifi/darwin-handoff-v25/dodge-ios-uefi.img
   Payload: experimental/wifi/darwin-station-v14/payload.bin
   System:  experimental/sileo/v1/system-sileo.apfs
 
@@ -86,7 +86,7 @@ iOS 27.2 / 24B119 — experimental Metal build
 /opt/homebrew/bin/python3 ~/Documents/Porting/OnePlus13-iOS-RAM/experimental/ios27/v2/boot-ios27.py
 
 The runner selects experimental/ios27/v2/BOOT-PREFLIGHT.json:
-  UEFI:    experimental/ios27/v2/project-boot-ios27.img
+  UEFI:    experimental/ios27/v2/dodge-ios-uefi.img
   Payload: experimental/ios27/v2/status-layout-v4/payload.bin
   Boot:    experimental/ios27/v2/status-layout-v4/boot.apfs
   System:  experimental/ios27/v2/system-registration-test.apfs
@@ -129,7 +129,7 @@ unfixed issue, not the now-working wallpaper picker.
 Next-boot candidate with displayed model name "iPhone 15 Pro Max":
 /opt/homebrew/bin/python3 ~/Documents/Porting/solarium19/oneplus13-ram/boot-ios19.py
 
-The top-level BOOT-PREFLIGHT.json selects project-boot-ios19-iphone15.img.
+The top-level BOOT-PREFLIGHT.json selects dodge-ios-uefi.img.
 Only the displayed model-name strings changed. Hardware compatibility
 identifiers and the working wallpaper kernel/system are preserved. Container
 checks passed and the UEFI booted in the battery/layout test; the displayed
@@ -160,3 +160,17 @@ restart, let Android finish loading, then run the chosen boot command again.
 
 Apple system images, IPSWs, firmware, private calibration and raw logs stay
 local. Do not add system.apfs or any other Apple system image to GitHub.
+
+Laptop boot folder
+------------------
+The owner's organized local boot files are in:
+  ~/Documents/Porting/iOS-Boots/
+
+Choose iOS16, iOS19 or iOS27. Each folder contains dodge-ios-uefi.img and
+Boot-iOS.command, with shortcuts to its matching payload/system/workspace.
+Start Android, authorize USB debugging and connect USB before opening the
+launcher. Keep USB connected until upload/startup finish. These are local
+files; the images and private profiles are not included in GitHub.
+
+The UEFI filename is dodge-ios-uefi.img for every iOS version; use the
+correct version folder. The Windows/Linux UEFI is named dodge-uefi.img.
