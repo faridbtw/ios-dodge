@@ -20,6 +20,8 @@ An experimental iOS port for **OnePlus 13 (`dodge`, SM8750)**, with Adreno graph
 
 > **RAM only.** Use `fastboot boot` and temporary staging. Never flash or erase phone partitions. System images, firmware, SDKs, device calibration and raw logs stay local.
 
+[Build locally from source](docs/BUILDING.md) — requirements, per-version recipes and the remaining local packaging steps. UEFI, payloads, system images, firmware and calibration are not distributed.
+
 ## Feature status
 
 | Feature | Status | What works |
