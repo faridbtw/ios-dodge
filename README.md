@@ -22,8 +22,6 @@ An experimental iOS port for **OnePlus 13 (`dodge`, SM8750)**, with Adreno graph
 
 ## Feature status
 
-Status reflects the selected Wi-Fi build, validated **30 October 2026**. Detailed evidence lives in [validation/](validation/); build identities are recorded in [STATUS.json](STATUS.json).
-
 | Feature | Status | What works |
 | :--- | :---: | :--- |
 | **iOS & touch** | Working | Interactive iOS, with seven cores running iOS and CPU0 serving firmware USB. |
@@ -45,8 +43,6 @@ Status reflects the selected Wi-Fi build, validated **30 October 2026**. Detaile
 | **Sound** | Speaker output is unresolved; work is paused. |
 | **Metal & 120 FPS** | Metal is disabled. Application rendering at 120 FPS is unverified; FPS work is stopped. |
 | **Long-term stability** | Sustained load, broader sensors/cameras/radios and arbitrary tweak compatibility need validation. |
-
-The experimental tearing candidate is **not selected**. The saved brightness build restored working buttons. See [BUGLIST.txt](BUGLIST.txt) for the full record.
 
 ## Get started
 
