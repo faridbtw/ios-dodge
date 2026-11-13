@@ -168,7 +168,7 @@ local. Do not add system.apfs or any other Apple system image to GitHub.
 Laptop boot folder
 ------------------
 The owner's organized local boot files are in:
-  ~/Documents/Porting/iOS-Boots/
+  ~/Documents/Porting/iOS/iOS-Boots/
 
 Choose iOS16, iOS19 or iOS27. Each folder contains dodge-ios-uefi.img and
 Boot-iOS.command, with shortcuts to its matching payload/system/workspace.
@@ -178,3 +178,18 @@ files; the images and private profiles are not included in GitHub.
 
 The UEFI filename is dodge-ios-uefi.img for every iOS version; use the
 correct version folder. The Windows/Linux UEFI is named dodge-uefi.img.
+
+Organized local workspace
+-------------------------
+All versions are grouped under ~/Documents/Porting/iOS/ on the owner's Mac:
+  iOS-Boots/iOS16, iOS19, iOS27 — matching boot launchers and Notes shortcuts.
+  OnePlus13-iOS-RAM — iOS16/iOS27 source and working images.
+  solarium19 — iOS19 original local inputs and working images.
+  ios-dodge — repository checkout and source-build tutorial.
+  Maintenance — local cleanup/organization reports (not uploaded).
+
+Original ~/Documents/Porting paths are compatibility links. Existing helper
+commands above still work. Keep those links and do not mix version files.
+The boot launchers use prepared local inputs; they are not GitHub downloads.
+Source-build steps and remaining packaging requirements: docs/BUILDING.md.
+UEFI/payload/system images, firmware and slider calibration remain local.
